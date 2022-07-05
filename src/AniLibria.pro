@@ -1,8 +1,9 @@
-QT += quick multimedia network webengine concurrent svg websockets
+QT += quick multimedia network concurrent websockets core5compat
+#webenginecore
 CONFIG += c++11
 
 windows {
-    QT += av
+    #QT += av
     Debug:CONFIG += qml_debug
     LIBS += -lKernel32
 }

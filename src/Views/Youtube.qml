@@ -19,7 +19,7 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.3
-import QtGraphicalEffects 1.0
+import Qt5Compat.GraphicalEffects
 import "../Controls"
 import "../Theme"
 
@@ -117,7 +117,7 @@ Page {
                                     horizontalOffset: 2
                                     verticalOffset: 2
                                     radius: 1
-                                    samples: 3
+                                    //samples: 3
                                     color: ApplicationTheme.panelBackgroundShadow
                                 }
                                 MouseArea {

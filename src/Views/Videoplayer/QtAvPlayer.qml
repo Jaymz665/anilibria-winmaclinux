@@ -69,7 +69,7 @@ Item {
     MediaPlayer {
         id: videoPlayer
         autoPlay: true
-        bufferSize: 300
+        bufferSize: 200
         onBufferProgressChanged: {
             playerBufferProgressChanged();
         }

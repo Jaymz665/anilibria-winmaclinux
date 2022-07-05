@@ -18,7 +18,7 @@
 
 import QtQuick 2.12
 import QtQuick.Controls 2.12
-import QtWebEngine 1.8
+//import QtWebEngine 1.8
 
 ApplicationWindow {
     id: root
@@ -70,8 +70,12 @@ ApplicationWindow {
     Component {
         id: webView
 
-        WebEngineView {
-            anchors.fill: parent
+        Item {
+
         }
+
+        /*WebEngineView {
+            anchors.fill: parent
+        }*/
     }
 }

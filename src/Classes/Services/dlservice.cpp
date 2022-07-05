@@ -22,6 +22,7 @@
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonArray>
+#include <QRegExp>
 #include "../Models/releasemodel.h"
 #include "../Models/onlinevideomodel.h"
 
@@ -158,31 +159,31 @@ void DLService::downloadedDetailsPage(QNetworkReply *reply)
     auto startSeriesIndex = data.indexOf("file: ", descriptionIndex) + 7;
     auto endSeriesIndex = data.indexOf("}]", startSeriesIndex);
 
-    releaseModel->setTitle(removeTags(data.midRef(nameIndex, originalNameIndex - nameIndex).toString(), nameKey));
+    releaseModel->setTitle(removeTags(data.mid(nameIndex, originalNameIndex - nameIndex), nameKey));
     releaseModel->addToNames(releaseModel->title());
-    releaseModel->addToNames(removeTags(data.midRef(originalNameIndex, releaseKindIndex - originalNameIndex).toString(), originalKey));
-    releaseModel->setType(removeTags(data.midRef(releaseKindIndex, seasonIndex - releaseKindIndex).toString(), releaseKindKey));
-    auto seasonAndYear = removeTags(data.midRef(seasonIndex, voicesIndex - seasonIndex).toString(), seasonKey);
+    releaseModel->addToNames(removeTags(data.mid(originalNameIndex, releaseKindIndex - originalNameIndex), originalKey));
+    releaseModel->setType(removeTags(data.mid(releaseKindIndex, seasonIndex - releaseKindIndex), releaseKindKey));
+    auto seasonAndYear = removeTags(data.mid(seasonIndex, voicesIndex - seasonIndex), seasonKey);
     auto seasonParts = seasonAndYear.split(" ");
     if (seasonParts.length() == 2) {
         releaseModel->setSeason(seasonParts[0]);
         releaseModel->setYear(seasonParts[1]);
     }
-    auto voices = removeTags(data.midRef(voicesIndex, genresIndex - voicesIndex).toString(), voicesKey);
+    auto voices = removeTags(data.mid(voicesIndex, genresIndex - voicesIndex), voicesKey);
     auto voicesParts = voices.split(",");
     foreach (auto voice, voicesParts)
     {
         releaseModel->addToVoices(voice);
     }
 
-    auto genres = removeTags(data.midRef(genresIndex, descriptionIndex - genresIndex).toString(), genresKey);
+    auto genres = removeTags(data.mid(genresIndex, descriptionIndex - genresIndex), genresKey);
     auto genreParts = genres.split(",");
     foreach (auto genre, genreParts)
     {
         releaseModel->addToGenres(genre);
     }
 
-    auto description = removeTags(data.midRef(descriptionIndex, endDescriptionIndex - descriptionIndex).toString(), descriptionKey);
+    auto description = removeTags(data.mid(descriptionIndex, endDescriptionIndex - descriptionIndex), descriptionKey);
     releaseModel->setDescription(description);
 
     auto url = reply->request().url().toString();
@@ -206,9 +207,9 @@ void DLService::downloadedDetailsPage(QNetworkReply *reply)
     auto seriesArray = seriesDocument.array();
     foreach (auto item, seriesArray) {
         OnlineVideoModel video;
-        video.setTitle(item["title"].toString());
-        video.setId(item["id"].toString().toInt());
-        auto file = item["file"].toString();
+        video.setTitle(item[QString("title")].toString());
+        video.setId(item[QString("id")].toString().toInt());
+        auto file = item[QString("file")].toString();
         file = file.replace("[Среднее]", "").replace("[Низкое]", "");
         auto qualities = file.split(",");
         video.setHd(qualities[0]);

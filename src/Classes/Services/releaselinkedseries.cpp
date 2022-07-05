@@ -334,7 +334,7 @@ void ReleaseLinkedSeries::processReleasesFromDescription(const QString& descript
     int watchOrderIndex = description.indexOf(startToken);
     if (watchOrderIndex == -1) return;
 
-    auto cuttedDescription = description.midRef(watchOrderIndex + startToken.length());
+    auto cuttedDescription = description.mid(watchOrderIndex + startToken.length());
     auto parts = cuttedDescription.split("#").mid(1);
 
     QRegExp linkRegexp("(https|http)\\:\\/\\/(www\\.anilibriaqt|anilibriaqt|www)\\.(anilib|anilibria)\\.(top|tv)\\/release\\/(.*)\\.html");
@@ -354,9 +354,7 @@ void ReleaseLinkedSeries::processReleasesFromDescription(const QString& descript
     auto series = new ReleaseSeriesModel();
 
     foreach (auto part, parts) {
-        auto partString = part.toString();
-
-        if (linkRegexp.indexIn(partString, 0) > -1) {
+        if (linkRegexp.indexIn(part, 0) > -1) {
             auto link = linkRegexp.cap(5);
             if (releases.contains(link)) {
                 auto release = releases[link];

@@ -47,9 +47,9 @@ void HistoryModel::writeToJson(QJsonObject &json) const noexcept
     json["watchTimestamp"] = m_WatchTimestamp;
 }
 
-void HistoryModel::readFromJson(QJsonValue &json)
+void HistoryModel::readFromJson(QJsonValueRef &json)
 {
-    setId(json["id"].toInt());
-    setTimestamp(json["timestamp"].toInt());
-    setWatchTimestamp(json["watchTimestamp"].toInt());
+    setId(json[QString("id")].toInt());
+    setTimestamp(json[QString("timestamp")].toInt());
+    setWatchTimestamp(json[QString("watchTimestamp")].toInt());
 }

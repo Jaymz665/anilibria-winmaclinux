@@ -16,13 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.3
-import QtWebEngine 1.8
-import QtQuick.Controls.Styles 1.4
-import QtQuick.Dialogs 1.2
-import QtGraphicalEffects 1.0
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+//import QtWebEngine 1.8
+//import QtQuick.Controls.Styles 1.4
+import QtQuick.Dialogs
+import Qt5Compat.GraphicalEffects
 import "../Controls"
 import "../Theme"
 
@@ -2298,16 +2298,16 @@ Page {
                 }
                 Loader {
                     id: webView
-                    sourceComponent: releasesViewModel.isOpenedCard && !vkCommentsWindow.opened ? webViewComponent : null
+                    //sourceComponent: releasesViewModel.isOpenedCard && !vkCommentsWindow.opened ? webViewComponent : null
                 }
-                Component {
+                /*Component {
                     id: webViewComponent
 
                     WebEngineView {
                         width: cardContainer.width
                         height: cardContainer.height - releaseInfo.height - 60
                     }
-                }
+                }*/
             }
         }
 

@@ -117,7 +117,7 @@ public:
 
     void writeToJson(QJsonObject &json) const noexcept;
 
-    void readFromJson(QJsonValue &json);
+    void readFromJson(QJsonValueRef &json);
 
     bool operator== (const FullReleaseModel &comparedModel) noexcept;
 

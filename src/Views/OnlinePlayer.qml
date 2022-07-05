@@ -19,8 +19,8 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.3
-import QtMultimedia 5.12
-import QtGraphicalEffects 1.0
+import QtMultimedia
+import Qt5Compat.GraphicalEffects
 import "../Controls"
 import "../Theme"
 import "Videoplayer"
@@ -185,7 +185,7 @@ Page {
             onlinePlayerViewModel.toggleFullScreen();
         }
         onPositionChanged: {
-            if (!(playerLoader.item.playbackState === MediaPlayer.PlayingState)) {
+            /*if (!(playerLoader.item.playbackState === MediaPlayer.PlayingState)) {
                 if (controlPanel.opacity === 0) _page.setControlVisible(true);
                 return;
             }
@@ -198,7 +198,7 @@ Page {
                 playerTimer.stop();
             } else {
                 playerTimer.restart();
-            }
+            }*/
         }
         onExited: {
             if (_page.height - onlinePlayerViewModel.lastMouseYPosition < 10) if (!playerTimer.running) playerTimer.restart();
@@ -208,7 +208,7 @@ Page {
     Loader {
         id: playerLoader
         anchors.fill: parent
-        source: onlinePlayerWindowViewModel.isStandartPlayer ? (onlinePlayerWindowViewModel.isQt515 ? `Videoplayer/QtPlayer515.qml` : `Videoplayer/QtPlayer.qml` ) : `Videoplayer/QtAvPlayer.qml`
+        source: onlinePlayerWindowViewModel.isStandartPlayer ? `Videoplayer/QtPlayer515.qml` : `Videoplayer/QtAvPlayer.qml`
         Component.onCompleted: {
             _page.videoPlayerSource = playerLoader.item.videoPlayerSource;
             _page.videoOutputSource = playerLoader.item.videoOutputSource;
@@ -270,7 +270,6 @@ Page {
             if (status === MediaPlayer.Buffered) {
                 onlinePlayerViewModel.isBuffering = false;
                 if (onlinePlayerViewModel.restorePosition > 0){
-                    console.log('Seek in player', onlinePlayerViewModel.restorePosition);
                     playerLoader.item.seek(onlinePlayerViewModel.restorePosition);
                     if (playerLoader.item.position >= onlinePlayerViewModel.restorePosition) onlinePlayerViewModel.restorePosition = 0;
                 } else {

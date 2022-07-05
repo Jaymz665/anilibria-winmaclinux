@@ -2,6 +2,7 @@
 #define SEENMODEL_H
 
 #include <QObject>
+#include <QJsonValueRef>
 
 class SeenModel
 {
@@ -24,7 +25,7 @@ public:
     void setTimestamp(const int timestamp) noexcept;
 
     void writeToJson(QJsonObject &json) const noexcept;
-    void readFromJson(QJsonValue &json);
+    void readFromJson(QJsonValueRef &json);
 };
 
 #endif // SEENMODEL_H

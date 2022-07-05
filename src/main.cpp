@@ -18,8 +18,6 @@
 
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
-#include <QtWebEngine>
-#include <QtSvg>
 #include <QQmlContext>
 #include <QString>
 #include <QQmlFileSelector>
@@ -55,10 +53,16 @@
 #include "Classes/ListModels/releasesimplelistmodel.h"
 #include "Classes/ListModels/myanilibrialistmodel.h"
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
+
 int main(int argc, char *argv[])
 {
+#if QT_VERSION <= QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+#endif
 
 #ifdef Q_OS_WIN
     if (argc == 2 && QString(argv[1]) == "outputlog") {
@@ -80,11 +84,11 @@ int main(int argc, char *argv[])
         IsPortable = true;
     }
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
-    QtWebEngine::initialize();
+    //QtWebEngine::initialize();
 #endif
     QGuiApplication app(argc, argv);
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-    QtWebEngine::initialize();
+    //QtWebEngine::initialize();
 #endif
     qmlRegisterType<SynchronizationService>("Anilibria.Services", 1, 0, "SynchronizationService");
     qmlRegisterType<LocalStorageService>("Anilibria.Services", 1, 0, "LocalStorage");

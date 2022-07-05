@@ -5,7 +5,6 @@
 #include <QDesktopServices>
 #include <QtConcurrent>
 #include <QFuture>
-#include <QMutableStringListIterator>
 #include "releasesviewmodel.h"
 #include "../../globalhelpers.h"
 
@@ -340,7 +339,7 @@ QStringList ReleasesViewModel::getMostPopularGenres() const noexcept
         iterator.next();
 
         QString key = iterator.key();
-        auto parts = key.splitRef(".");
+        auto parts = key.split(".");
 
         auto id = parts[0].toInt();
         if (alreadyProcessed.contains(id)) continue;
@@ -397,7 +396,7 @@ QStringList ReleasesViewModel::getMostPopularVoices() const noexcept
         iterator.next();
 
         QString key = iterator.key();
-        auto parts = key.splitRef(".");
+        auto parts = key.split(".");
 
         auto id = parts[0].toInt();
         if (alreadyProcessed.contains(id)) continue;
@@ -473,7 +472,7 @@ void ReleasesViewModel::fillNewFromStart(QList<FullReleaseModel *> *list) const 
 void ReleasesViewModel::fillNewFromLastTwoDays(QList<FullReleaseModel *> *list) const noexcept
 {
     auto now = QDateTime::currentDateTimeUtc().addDays(-3);
-    auto timestamp = static_cast<int>(now.toTime_t());
+    auto timestamp = static_cast<int>(now.toSecsSinceEpoch());
     foreach (auto release, *m_releases) {
         if (release->timestamp() < timestamp) continue;
 
@@ -484,7 +483,7 @@ void ReleasesViewModel::fillNewFromLastTwoDays(QList<FullReleaseModel *> *list) 
 void ReleasesViewModel::fillAbandonedSeens(QList<FullReleaseModel *> *list) const noexcept
 {
     auto now = QDateTime::currentDateTimeUtc().addDays(-18);
-    auto timestamp = static_cast<int>(now.toTime_t());
+    auto timestamp = static_cast<int>(now.toSecsSinceEpoch());
 
     foreach (auto release, *m_releases) {
         if (!m_historyItems->contains(release->id())) continue;
@@ -1012,7 +1011,7 @@ void ReleasesViewModel::setToReleaseHistory(int id, int type) noexcept
     }
 
     QDateTime now = QDateTime::currentDateTime();
-    int timestamp = static_cast<int>(now.toTime_t());
+    int timestamp = static_cast<int>(now.toSecsSinceEpoch());
 
     switch (type) {
         case HistoryReleaseCardMode:
@@ -1213,10 +1212,10 @@ void ReleasesViewModel::saveSchedule(QString json)
     QJsonObject savedObject;
 
     foreach (auto dataItem, data) {
-        auto day = dataItem["day"].toString();
-        auto items = dataItem["items"].toArray();
+        auto day = dataItem[QString("day")].toString();
+        auto items = dataItem[QString("items")].toArray();
         foreach (auto item, items) {
-            auto key = QString::number(item["id"].toInt());
+            auto key = QString::number(item[QString("id")].toInt());
             savedObject[key] = day;
         }
     }
@@ -1246,7 +1245,7 @@ void ReleasesViewModel::saveFavoritesFromJson(QString data)
 
     QVector<int> ids;
     foreach (auto item, items) {
-        ids.append(item["id"].toInt());
+        ids.append(item[QString("id")].toInt());
     }
 
     QJsonArray array;
@@ -1360,7 +1359,7 @@ void ReleasesViewModel::recalculateSeenCounts()
 #if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
         auto parts = item.splitRef(".");
 #else
-        auto parts = item.splitRef(".", Qt::SkipEmptyParts);
+        auto parts = item.split(".", Qt::SkipEmptyParts);
 #endif
         auto key = parts[0].toInt();
         if (seenMap.contains(key)) {

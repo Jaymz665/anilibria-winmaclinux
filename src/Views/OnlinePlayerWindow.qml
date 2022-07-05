@@ -50,7 +50,7 @@ ApplicationWindow {
             root.videoSource.addNewVideoOuput(videoOutputLoader.item);
         }
         root.videoSource.playbackStateChanged.connect(playbackStateChanged);
-        root.videoSource.volumeChanged.connect(volumeChanged);
+        root.videoSource.audioOutput.volumeChanged.connect(volumeChanged);
         volumeSlider.value = root.videoSource.volume * 100;
     }
 
@@ -272,7 +272,7 @@ ApplicationWindow {
         onlinePlayerWindowViewModel.showPanel();
     }
 
-    onHideWindow: {
+    onHideWindow: function (paused) {
         videoOutputLoader.item.visible = false;
         hide();
         onlinePlayerWindowViewModel.opened = false;

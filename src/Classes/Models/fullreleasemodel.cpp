@@ -161,29 +161,29 @@ void FullReleaseModel::writeToJson(QJsonObject &json) const noexcept
     json["isDeleted"] = m_isDeleted;
 }
 
-void FullReleaseModel::readFromJson(QJsonValue &json)
+void FullReleaseModel::readFromJson(QJsonValueRef &json)
 {
-    setId(json["id"].toInt());
-    setTitle(json["title"].toString());
-    setCode(json["code"].toString());
-    setOriginalName(json["originalName"].toString());
-    setRating(json["rating"].toInt());
-    setSeries(json["series"].toString());
-    setStatus(json["status"].toString());
-    setType(json["type"].toString());
-    setTimestamp(json["timestamp"].toInt());
-    setYear(json["year"].toString());
-    setSeason(json["season"].toString());
-    setCountTorrents(json["countTorrents"].toInt());
-    setCountOnlineVideos(json["countVideos"].toInt());
-    setDescription(json["description"].toString());
-    setAnnounce(json["announce"].toString());
-    setGenres(json["genres"].toString());
-    setPoster(json["poster"].toString());
-    setVoicers(json["voices"].toString());
-    setTorrents(json["torrents"].toString());
-    setVideos(json["videos"].toString());
-    setIsDeleted(json["isDeleted"].toBool());
+    setId(json[QString("id")].toInt());
+    setTitle(json[QString("title")].toString());
+    setCode(json[QString("code")].toString());
+    setOriginalName(json[QString("originalName")].toString());
+    setRating(json[QString("rating")].toInt());
+    setSeries(json[QString("series")].toString());
+    setStatus(json[QString("status")].toString());
+    setType(json[QString("type")].toString());
+    setTimestamp(json[QString("timestamp")].toInt());
+    setYear(json[QString("year")].toString());
+    setSeason(json[QString("season")].toString());
+    setCountTorrents(json[QString("countTorrents")].toInt());
+    setCountOnlineVideos(json[QString("countVideos")].toInt());
+    setDescription(json[QString("description")].toString());
+    setAnnounce(json[QString("announce")].toString());
+    setGenres(json[QString("genres")].toString());
+    setPoster(json[QString("poster")].toString());
+    setVoicers(json[QString("voices")].toString());
+    setTorrents(json[QString("torrents")].toString());
+    setVideos(json[QString("videos")].toString());
+    setIsDeleted(json[QString("isDeleted")].toBool());
 }
 bool FullReleaseModel::operator== (const FullReleaseModel &comparedModel) noexcept
 {

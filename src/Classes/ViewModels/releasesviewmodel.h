@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QScopedPointer>
 #include <QSharedPointer>
+#include <QStringList>
 #include "../ListModels/releasetorrentslist.h"
 #include "imagebackgroundviewmodel.h"
 #include "../Models/fullreleasemodel.h"

@@ -16,16 +16,16 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import QtQuick 2.12
-import QtQuick.Window 2.12
-import QtQuick.Controls 2.5
-import QtQuick.Layouts 1.3
-import QtQuick.Controls.Material 2.0
-import QtGraphicalEffects 1.12
-import QtQuick.Dialogs 1.2
-import Anilibria.Services 1.0
-import Anilibria.ListModels 1.0
-import Anilibria.ViewModels 1.0
+import QtQuick
+import QtQuick.Window
+import QtQuick.Controls
+import QtQuick.Layouts
+import QtQuick.Controls.Material
+import Qt5Compat.GraphicalEffects
+import QtQuick.Dialogs
+import Anilibria.Services
+import Anilibria.ListModels
+import Anilibria.ViewModels
 import "Views"
 import "Controls"
 import "Theme"
@@ -144,7 +144,7 @@ ApplicationWindow {
             width: 40
             iconColor: ApplicationTheme.filterIconButtonColor
             hoverColor: ApplicationTheme.filterIconButtonHoverColor
-            iconPath: "Assets/Icons/catalogmenu.svg"
+            iconPath: assetsLocation.iconsPath + "catalogmenu.svg"
             iconWidth: 20
             iconHeight: 20
             tooltipMessage: "Перейти на страницу Каталог Релизов"
@@ -162,7 +162,7 @@ ApplicationWindow {
             width: 40
             iconColor: ApplicationTheme.filterIconButtonColor
             hoverColor: ApplicationTheme.filterIconButtonHoverColor
-            iconPath: "Assets/Icons/videoplayermenu.svg"
+            iconPath: assetsLocation.iconsPath + "videoplayermenu.svg"
             iconWidth: 20
             iconHeight: 20
             tooltipMessage: "Перейти на страницу Видеоплеер"
@@ -180,7 +180,7 @@ ApplicationWindow {
             width: 40
             iconColor: ApplicationTheme.filterIconButtonColor
             hoverColor: ApplicationTheme.filterIconButtonHoverColor
-            iconPath: "Assets/Icons/cinemahallmenu.svg"
+            iconPath: assetsLocation.iconsPath + "cinemahallmenu.svg"
             iconWidth: 20
             iconHeight: 20
             tooltipMessage: "Перейти на страницу Кинозал"
@@ -198,7 +198,7 @@ ApplicationWindow {
             width: 40
             iconColor: ApplicationTheme.filterIconButtonColor
             hoverColor: ApplicationTheme.filterIconButtonHoverColor
-            iconPath: "Assets/Icons/seriesmenu.svg"
+            iconPath: assetsLocation.iconsPath + "seriesmenu.svg"
             iconWidth: 20
             iconHeight: 20
             tooltipMessage: "Перейти на страницу Связанные релизы"
@@ -215,7 +215,7 @@ ApplicationWindow {
             height: 34
             width: 40
             hoverColor: ApplicationTheme.filterIconButtonHoverColor
-            iconPath: "Assets/Icons/house.svg"
+            iconPath: assetsLocation.iconsPath + "house.svg"
             iconWidth: 20
             iconHeight: 20
             tooltipMessage: "Перейти на страницу Моя Анилибрия"
@@ -232,7 +232,7 @@ ApplicationWindow {
             width: 40
             overlayVisible: false
             hoverColor: ApplicationTheme.filterIconButtonHoverColor
-            iconPath: "Assets/Icons/coloredleftmenu.svg"
+            iconPath: assetsLocation.iconsPath + "coloredleftmenu.svg"
             iconWidth: 24
             iconHeight: 24
             tooltipMessage: "Выставить размер окна - левая половина экрана"
@@ -255,7 +255,7 @@ ApplicationWindow {
             width: 40
             overlayVisible: false
             hoverColor: ApplicationTheme.filterIconButtonHoverColor
-            iconPath: "Assets/Icons/coloredrightmenu.svg"
+            iconPath: assetsLocation.iconsPath + "coloredrightmenu.svg"
             iconWidth: 24
             iconHeight: 24
             tooltipMessage: "Выставить размер окна - правая половина экрана"
@@ -278,7 +278,7 @@ ApplicationWindow {
             width: 40
             overlayVisible: false
             hoverColor: ApplicationTheme.filterIconButtonHoverColor
-            iconPath: "Assets/Icons/coloredminimize.svg"
+            iconPath: assetsLocation.iconsPath + "coloredminimize.svg"
             iconWidth: 24
             iconHeight: 24
             tooltipMessage: "Минимизировать окно в панель задач"
@@ -295,7 +295,7 @@ ApplicationWindow {
             width: 40
             overlayVisible: false
             hoverColor: ApplicationTheme.filterIconButtonHoverColor
-            iconPath: window.isShowFullScreenSize ? "Assets/Icons/gofromfullscreen.svg" : "Assets/Icons/gotofullscreen.svg"
+            iconPath: window.isShowFullScreenSize ? (assetsLocation.iconsPath + "gofromfullscreen.svg") : (assetsLocation.iconsPath + "gotofullscreen.svg")
             iconWidth: 24
             iconHeight: 24
             tooltipMessage: window.isShowFullScreenSize ? "Вернуть окну нормальный размер" : "Открыть окно на полный экран"
@@ -319,7 +319,7 @@ ApplicationWindow {
             width: 40
             overlayVisible: false
             hoverColor: ApplicationTheme.filterIconButtonHoverColor
-            iconPath: "Assets/Icons/coloredclosewindow.svg"
+            iconPath: assetsLocation.iconsPath + "coloredclosewindow.svg"
             iconWidth: 24
             iconHeight: 24
             tooltipMessage: "Выйти из приложения"
@@ -609,7 +609,7 @@ ApplicationWindow {
     FileDialog {
         id: saveTorrentFileDialog
         title: "Выберите куда и как сохранить торрент файл"
-        selectExisting: false
+        //selectExisting: false
         nameFilters: [ "Torrents (*.torrent)" ]
 
         onAccepted: {
@@ -620,7 +620,7 @@ ApplicationWindow {
     FileDialog {
         id: importReleasesFileDialog
         title: "Выберите файл для импорта"
-        selectExisting: true
+        //selectExisting: true
         nameFilters: [ "Releases (*.releases)" ]
         onAccepted: {
             releasesViewModel.importReleasesFromFile(importReleasesFileDialog.fileUrl);
@@ -634,7 +634,7 @@ ApplicationWindow {
             synchronizeReleases(1);
         }
 
-        onUserDataReceived: {
+        onUserDataReceived: function (data){
             try {
                 const userData = JSON.parse(data);
                 window.userModel = userData;
@@ -740,7 +740,7 @@ ApplicationWindow {
                     width: 40
                     hoverColor: Qt.rgba(0, 0, 0, .1)
                     overlayVisible: false
-                    iconPath: "Assets/Icons/logout.svg"
+                    iconPath: assetsLocation.iconsPath + "logout.svg"
                     iconWidth: 28
                     iconHeight: 28
                     tooltipMessage: "Выйти из аккаунта"
