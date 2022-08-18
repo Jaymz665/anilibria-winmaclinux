@@ -1,3 +1,21 @@
+/*
+    AniLibria - desktop client for the website anilibria.tv
+    Copyright (C) 2021 Roman Vladimirov
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include <QClipboard>
 #include <QGuiApplication>
 #include <QPixmap>
@@ -717,6 +735,7 @@ void ReleasesViewModel::closeReleaseCard() noexcept
     m_openedRelease = nullptr;
 
     emit isOpenedCardChanged();
+    emit openedReleaseIdChanged();
 }
 
 void ReleasesViewModel::openDescriptionLink(const QString &link) noexcept
@@ -915,10 +934,12 @@ void ReleasesViewModel::updateAllReleases(const QString &releases, bool insideDa
                 jsonReleases = jsonDocument.array();
             }
 
-            auto newReleasesCount = m_releaseChanges->newReleases()->count();
-            auto newOnlineSeriesCount = m_releaseChanges->newOnlineSeries()->count();
-            auto newTorrentsCount = m_releaseChanges->newTorrents()->count();
-            auto newTorrentSeriesCount = m_releaseChanges->newTorrentSeries()->count();
+            auto filterByFavorites = m_items->filterByFavorites();
+
+            auto oldReleasesCount = m_releaseChanges->newReleases()->count();
+            auto oldOnlineSeriesCount = getCountFromChanges(m_releaseChanges->newOnlineSeries(), filterByFavorites);
+            auto oldTorrentsCount = getCountFromChanges(m_releaseChanges->newTorrents(), filterByFavorites);
+            auto oldTorrentSeriesCount = getCountFromChanges(m_releaseChanges->newTorrentSeries(), filterByFavorites);
 
             auto isFirstStart = m_releases->count() == 0;
 
@@ -934,18 +955,33 @@ void ReleasesViewModel::updateAllReleases(const QString &releases, bool insideDa
             saveReleasesFromMemoryToFile();
             saveChanges();
 
-            //TODO: make check based on favorites
+            auto newReleasesCount = m_releaseChanges->newReleases()->count();
+            auto newOnlineSeriesCount = getCountFromChanges(m_releaseChanges->newOnlineSeries(), filterByFavorites);
+            auto newTorrentsCount = getCountFromChanges(m_releaseChanges->newTorrents(), filterByFavorites);
+            auto newTorrentSeriesCount = getCountFromChanges(m_releaseChanges->newTorrentSeries(), filterByFavorites);
+
             QString newEntities;
-            if (m_releaseChanges->newReleases()->count() > newReleasesCount) newEntities += "Новых релизов " + QString::number(m_releaseChanges->newReleases()->count() - newReleasesCount) + " ";
-            if (m_releaseChanges->newOnlineSeries()->count() > newOnlineSeriesCount) newEntities += "Новых серий " + QString::number(m_releaseChanges->newOnlineSeries()->count() - newOnlineSeriesCount) + " ";
-            if (m_releaseChanges->newTorrents()->count() > newTorrentsCount) newEntities += "Новых торрентов " + QString::number(m_releaseChanges->newTorrents()->count() - newTorrentsCount) + " ";
-            if (m_releaseChanges->newTorrentSeries()->count() > newTorrentSeriesCount) newEntities += "Новых серий в торрентах " + QString::number(m_releaseChanges->newTorrentSeries()->count() - newTorrentSeriesCount);
+            if (newReleasesCount > oldReleasesCount) newEntities += "Новых релизов " + QString::number(newReleasesCount - oldReleasesCount) + " ";
+            if (newOnlineSeriesCount > oldOnlineSeriesCount) newEntities += "Новых серий " + QString::number(newOnlineSeriesCount - oldOnlineSeriesCount) + " ";
+            if (newTorrentsCount > oldTorrentsCount) newEntities += "Новых торрентов " + QString::number(newTorrentsCount - oldTorrentsCount) + " ";
+            if (newTorrentSeriesCount > oldTorrentSeriesCount) newEntities += "Новых серий в торрентах " + QString::number(newTorrentSeriesCount - oldTorrentSeriesCount);
             setNewEntities(newEntities);
 
             return true;
         }
     );
     m_releasesUpdateWatcher->setFuture(future);
+}
+
+uint32_t ReleasesViewModel::getCountFromChanges(const QList<int> *releases, bool filterByFavorites)
+{
+    if (filterByFavorites) {
+        uint32_t count = 0;
+        foreach (auto releaseId, *releases) {
+            if (m_userFavorites->contains(releaseId)) count++;
+        }
+    }
+    return releases->count();
 }
 
 void ReleasesViewModel::openInExternalPlayer(const QString &url)
@@ -983,6 +1019,16 @@ FullReleaseModel *ReleasesViewModel::getReleaseById(int id) const noexcept
     if(iterator == m_releases->end()) return nullptr;
 
     return *iterator;
+}
+
+void ReleasesViewModel::resetReleaseChanges(int releaseId) noexcept
+{
+    if (m_releaseChanges->newReleases()->contains(releaseId)) m_releaseChanges->newReleases()->removeOne(releaseId);
+    if (m_releaseChanges->newOnlineSeries()->contains(releaseId)) m_releaseChanges->newOnlineSeries()->removeOne(releaseId);
+    if (m_releaseChanges->newTorrents()->contains(releaseId)) m_releaseChanges->newTorrents()->removeOne(releaseId);
+    if (m_releaseChanges->newTorrentSeries()->contains(releaseId)) m_releaseChanges->newTorrentSeries()->removeOne(releaseId);
+
+    saveChanges();
 }
 
 void ReleasesViewModel::removeAllSeenMark()
@@ -1514,16 +1560,6 @@ FullReleaseModel *ReleasesViewModel::getReleaseByCode(QString code) const noexce
     if(iterator == m_releases->end()) return nullptr;
 
     return *iterator;
-}
-
-void ReleasesViewModel::resetReleaseChanges(int releaseId) noexcept
-{
-    if (m_releaseChanges->newReleases()->contains(releaseId)) m_releaseChanges->newReleases()->removeOne(releaseId);
-    if (m_releaseChanges->newOnlineSeries()->contains(releaseId)) m_releaseChanges->newOnlineSeries()->removeOne(releaseId);
-    if (m_releaseChanges->newTorrents()->contains(releaseId)) m_releaseChanges->newTorrents()->removeOne(releaseId);
-    if (m_releaseChanges->newTorrentSeries()->contains(releaseId)) m_releaseChanges->newTorrentSeries()->removeOne(releaseId);
-
-    saveChanges();
 }
 
 int ReleasesViewModel::randomBetween(int low, int high) const noexcept

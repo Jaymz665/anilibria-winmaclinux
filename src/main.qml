@@ -30,6 +30,9 @@ import "Views"
 import "Controls"
 import "Theme"
 
+
+import QtMultimedia
+
 ApplicationWindow {
     id: window
     visible: true
@@ -335,7 +338,7 @@ ApplicationWindow {
             anchors.right: leftHalfScreenWindow.left
             height: parent.height
             property variant clickPosition: "1,1"
-            onPressed: {
+            onPressed: function (mouse) {
                 windowDraggingArea.clickPosition = Qt.point(mouse.x, mouse.y);
             }
             onPositionChanged: {
@@ -928,7 +931,6 @@ ApplicationWindow {
         onReleaseCardOpened: {
             analyticsService.sendView("releasecard", "open", "%2Frelease");
             releases.setWebViewUrl();
-            vkCommentsWindow.refreshComments();
             userActivityViewModel.addOpenedCardToCounter();
         }
         onAfterSynchronizedReleases: {
@@ -1275,6 +1277,9 @@ ApplicationWindow {
             videoplayer.navigateTo();
             windowFooter.visible = false;
         }
+        onReleasesPageToNavigated: {
+            releases.navigateTo();
+        }
     }
 
     OsExtras {
@@ -1291,6 +1296,7 @@ ApplicationWindow {
     UserConfigurationViewModel {
         id: userConfigurationViewModel
         Component.onDestruction: {
+            if (!userConfigurationViewModel.showedVideoForNewcomers) userConfigurationViewModel.showedVideoForNewcomers = true;
             userConfigurationViewModel.saveSettingsToFile();
         }
     }
@@ -1305,10 +1311,6 @@ ApplicationWindow {
         videoOutput: videoplayer.videoOutputSource
     }
 
-    VkCommentsWindow {
-        id: vkCommentsWindow
-    }
-
     MyAnilibriaViewModel {
         id: myAnilibriaViewModel
         releasesViewModel: releasesViewModel
@@ -1316,6 +1318,10 @@ ApplicationWindow {
         Component.onDestruction: {
             myAnilibriaViewModel.saveSectionsToFile();
         }
+    }
+
+    Component.onCompleted: {
+        player.play()
     }
 
     Item {

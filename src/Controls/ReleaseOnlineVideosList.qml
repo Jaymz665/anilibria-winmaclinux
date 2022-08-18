@@ -8,20 +8,21 @@ Item {
     width: parent.width
     height: 330
 
-    property alias filterMode: viewModel.filterMode
-    property alias hasItems: viewModel.hasItems
-    property alias countItems: viewModel.countItems
+    property alias releaseId: viewModel.releaseId
 
-    ReleaseSimpleListModel {
+    signal openVideo(int videoId)
+
+    ReleaseOnlineSeriesListModel {
         id: viewModel
         releases: releasesViewModel
+        onlinePlayer: onlinePlayerViewModel
     }
 
     Rectangle {
         id: mask
         width: 180
         height: 260
-        radius: 10
+        radius: 8
         visible: false
     }
 
@@ -35,8 +36,8 @@ Item {
             active: true
         }
         delegate: Item {
-            width: 200
-            height: 300
+            width: 410
+            height: 330
 
             Rectangle {
                 id: posterImage
@@ -44,25 +45,45 @@ Item {
                 anchors.topMargin: 8
                 anchors.left: parent.left
                 anchors.leftMargin: 8
-                width: 182
-                height: 272
-                border.color: "#adadad"
-                border.width: 1
-                radius: 12
+                width: isCurrentVideo ? 404 : 400
+                height: isCurrentVideo ? 274 : 272
+                border.color: isCurrentVideo ? ApplicationTheme.selectedItem : "#adadad"
+                border.width: isCurrentVideo ? 2 : 1
+                radius: 14
 
                 property bool posterHovered: false
 
                 Image {
                     anchors.centerIn: parent
-                    source: localStorage.getReleasePosterPath(id, poster)
-                    sourceSize: Qt.size(350, 500)
-                    fillMode: Image.PreserveAspectCrop
-                    width: 180
-                    height: 270
+                    source: poster
+                    sourceSize: Qt.size(400, 270)
+                    fillMode: isEmptyPoster ? Image.Stretch : Image.PreserveAspectCrop
+                    width: isEmptyPoster ? 100 : 400
+                    height: isEmptyPoster ? 100 : 270
                     layer.enabled: true
                     layer.effect: OpacityMask {
                         maskSource: mask
                     }
+                }
+
+                Image {
+                    id: bookmarkImage
+                    anchors.left: posterImage.left
+                    anchors.leftMargin: -7
+                    width: 50
+                    height: 50
+                    source: assetsLocation.iconsPath + "numberbookmark.svg"
+                }
+
+                PlainText {
+                    anchors.left: bookmarkImage.left
+                    anchors.top: bookmarkImage.top
+                    anchors.topMargin: 22
+                    width: 40
+                    horizontalAlignment: Qt.AlignHCenter
+                    text: id
+                    fontPointSize: 10
+                    color: "white"
                 }
 
                 Rectangle {
@@ -74,57 +95,36 @@ Item {
                     radius: 12
                 }
 
-                Item {
-                    anchors.centerIn: parent
-                    visible: posterImage.posterHovered
-                    width: 150
-                    height: 28
-
-                    Rectangle {
-                        width: 150
-                        height: parent.height
-                        color: ApplicationTheme.roundedButtonBackground
-                        border.color: "transparent"
-                        border.width: 1
-                        radius: 18
-
-                        PlainText {
-                            id: buttonTitle
-                            fontPointSize: 11
-                            anchors.centerIn: parent
-                            color: ApplicationTheme.roundedButtonForeground
-                            text: "Смотреть"
-                        }
-                    }
-                }
-
                 MouseArea {
                     anchors.fill: parent
                     hoverEnabled: true
                     onEntered: {
                         posterImage.posterHovered = true;
-                        myAnilibriaViewModel.hoveredDescription = description
                     }
                     onExited: {
                         posterImage.posterHovered = false;
-                        myAnilibriaViewModel.hoveredDescription = ""
                     }
                     onPressed: {
-                        mainViewModel.selectPage("videoplayer");
-                        onlinePlayerViewModel.quickSetupForSingleRelease(id);
+                        openVideo(index);
                     }
                 }
             }
             AccentText {
                 anchors.top: posterImage.bottom
                 width: parent.width
-                text: title
+                text: isSeens ? "Просмотрено" : currentTimeVideo
                 fontPointSize: 10
-                maximumLineCount: 2
+                maximumLineCount: 1
                 elide: Text.ElideRight
-                wrapMode: Text.Wrap
+                wrapMode: Text.NoWrap
                 horizontalAlignment: Qt.AlignHCenter
             }
         }
+    }
+
+    EmptyBoxArea {
+        visible: viewModel.isEmpty
+        anchors.fill: parent
+        title: "Нет онлайн серий"
     }
 }

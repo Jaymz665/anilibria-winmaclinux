@@ -108,9 +108,7 @@
         <file>Views/Videoplayer/QtPlayer515.qml</file>
         <file>Views/Videoplayer/QtAvPlayer.qml</file>
         <file>Views/Videoplayer/QtAvVideoOutput.qml</file>
-        <file>Views/Videoplayer/QtPlayer.qml</file>
         <file>Views/Videoplayer/QtVideo515Output.qml</file>
-        <file>Views/Videoplayer/QtVideoOutput.qml</file>
         <file>Controls/BackgroundImagePopup.qml</file>
         <file>Controls/DictionaryComboBox.qml</file>
         <file>Controls/+qtless515/DictionaryComboBox.qml</file>
@@ -118,7 +116,6 @@
         <file>Assets/Icons/listcustom.svg</file>
         <file>Assets/Icons/sortascending.svg</file>
         <file>Assets/Icons/sortdescending.svg</file>
-        <file>Views/VkCommentsWindow.qml</file>
         <file>Assets/Icons/christmasball.svg</file>
         <file>Assets/Icons/snowflake.svg</file>
         <file>Assets/Icons/snowbackground.png</file>
@@ -158,5 +155,12 @@
         <file>Assets/Icons/coloredsortup.svg</file>
         <file>Assets/Icons/minus.svg</file>
         <file>Assets/Icons/plus.svg</file>
+        <file>Controls/ReleaseSeriesList.qml</file>
+        <file>Assets/Icons/coloredstar.svg</file>
+        <file>Controls/ReleaseOnlineVideosList.qml</file>
+        <file>Assets/Icons/broken.svg</file>
+        <file>Assets/Icons/emptybox.svg</file>
+        <file>Controls/EmptyBoxArea.qml</file>
+        <file>Controls/InfoForNewcomers.qml</file>
     </qresource>
 </RCC>

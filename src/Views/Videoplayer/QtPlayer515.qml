@@ -76,6 +76,10 @@ Item {
             }
         }
 
+        onSourceChanged: {
+            console.log(source);
+        }
+
         signal addNewVideoOuput(var newVideoOutput);
 
         onAddNewVideoOuput: function (newVideoOutput) {

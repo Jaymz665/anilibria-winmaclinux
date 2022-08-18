@@ -19,10 +19,9 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-//import QtWebEngine 1.8
-//import QtQuick.Controls.Styles 1.4
 import QtQuick.Dialogs
 import Qt5Compat.GraphicalEffects
+import Anilibria.ListModels 1.0
 import "../Controls"
 import "../Theme"
 
@@ -53,15 +52,17 @@ Page {
     signal watchMultipleReleases()
     signal setWebViewUrl()
 
-    Keys.onPressed: {
+    Keys.onPressed: function (event) {
         if (event.key === Qt.Key_Escape) {
             if (releasePosterPreview.isVisible) {
                 releasePosterPreview.isVisible = false;
-                if (Qt.platform.os !== "windows") webView.item.visible = true;
             } else {
                 releasesViewModel.hideReleaseCard();
                 page.showAlpabeticalCharaters = false;
             }
+        }
+        if (event.key === Qt.Key_Home) {
+            if (compactModeSwitch.checked && !releasesViewModel.synchronizationEnabled) showPanelInCompactModeButton.clicked();
         }
     }
 
@@ -77,11 +78,15 @@ Page {
     }
 
     onSetWebViewUrl: {
-        if (webView.status === Loader.Ready) webView.item.url = releasesViewModel.getVkontakteCommentPage(releasesViewModel.openedReleaseCode);
+        //REMOVE!!!!
     }
 
     background: Rectangle {
         color: ApplicationTheme.pageBackground
+    }
+
+    onNavigateTo: {
+        page.forceActiveFocus();
     }
 
     anchors.fill: parent
@@ -100,16 +105,6 @@ Page {
         height: 260
         radius: 6
         visible: false
-    }
-
-    MouseArea {
-        anchors.fill: parent
-        hoverEnabled: true
-        onPositionChanged: {
-            if (!compactModeSwitch.checked) return;
-            if (mouse.x < 80) releasesViewModel.showSidePanel = true;
-            if (mouse.x > 100) releasesViewModel.showSidePanel = false;
-        }
     }
 
     RowLayout {
@@ -900,6 +895,7 @@ Page {
                             Switch {
                                 id: notificationForFavorites
                                 onCheckedChanged: {
+                                    releasesViewModel.items.filterByFavorites = checked;
                                     localStorage.setNotificationForFavorites(checked);
                                     releasesViewModel.notificationForFavorites = checked;
                                 }
@@ -1171,6 +1167,7 @@ Page {
                         }
                     }
                 }
+
                 PlainText {
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -1178,6 +1175,18 @@ Page {
                     fontPointSize: 12
                     text: "Выполняется синхронизация..."
                 }
+
+                RoundedActionButton {
+                    id: showPanelInCompactModeButton
+                    visible: compactModeSwitch.checked && !releasesViewModel.synchronizationEnabled
+                    text: releasesViewModel.showSidePanel ? "Скрыть панель" : "Показать панель"
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    onClicked: {
+                        releasesViewModel.showSidePanel = !releasesViewModel.showSidePanel;
+                    }
+                }
+
 
                 RoundedActionButton {
                     id: setToStartedSectionButton
@@ -1609,6 +1618,12 @@ Page {
                     clip: true
                     ScrollBar.vertical: ScrollBar {
                         active: true
+                        onPositionChanged: {
+                            if (position < -0.0008 && !releasesViewModel.synchronizationEnabled) {
+                                releasesViewModel.synchronizationEnabled = true;
+                                synchronizationService.synchronizeReleases(1);
+                            }
+                        }
                     }
 
                     Component {
@@ -1637,7 +1652,7 @@ Page {
                                     releasesViewModel.removeReleaseFromFavorites(id);
                                     releasesViewModel.clearSelectedReleases();
                                 }
-                                onWatchRelease: {
+                                onWatchRelease: function (id, videos, poster) {
                                     page.watchSingleRelease(id, videos, -1, poster);
                                 }
                             }
@@ -1717,6 +1732,9 @@ Page {
                         fillMode: Image.PreserveAspectCrop
                         width: 280
                         height: 390
+                        sourceSize.width: 280
+                        sourceSize.height: 390
+                        mipmap: true
                         layer.enabled: true
                         layer.effect: OpacityMask {
                             maskSource: cardMask
@@ -1726,11 +1744,11 @@ Page {
                             anchors.fill: parent
                             onPressed: {
                                 releasePosterPreview.isVisible = true;
-                                if (Qt.platform.os !== "windows") webView.item.visible = false;
                             }
                         }
                     }
                     Column {
+                        id: descriptionColumn
                         width: page.width - cardButtons.width - cardPoster.width
                         AccentText {
                             textFormat: Text.RichText
@@ -1751,6 +1769,16 @@ Page {
                             width: parent.width
                             maximumLineCount: 2
                             text: releasesViewModel.openedReleaseOriginalName
+                        }
+                        AccentText {
+                            leftPadding: 8
+                            topPadding: 4
+                            height: releasesViewModel.openedReleaseAnnounce ? 20 : 0
+                            fontPointSize: 10
+                            wrapMode: Text.NoWrap
+                            elide: Text.ElideRight
+                            maximumLineCount: 1
+                            text: releasesViewModel.openedReleaseAnnounce
                         }
                         PlainText {
                             fontPointSize: 10
@@ -1793,7 +1821,6 @@ Page {
                             topPadding: 4
                             text: releasesViewModel.openedReleaseInScheduleDisplay
                         }
-
                         PlainText {
                             fontPointSize: 10
                             leftPadding: 8
@@ -1877,21 +1904,36 @@ Page {
                             width: parent.width
                             text: qsTr("<b>Все серии просмотрены</b>")
                         }
-                        PlainText {
-                            fontPointSize: 10
-                            leftPadding: 8
-                            topPadding: 4
-                            width: parent.width
-                            wrapMode: Text.WordWrap
-                            text: qsTr("<b>Описание:</b> ") + releasesViewModel.openedReleaseDescription
-                            onLinkActivated: {
-                                releasesViewModel.openDescriptionLink(link);
+                        Flickable {
+                            id: descriptionContainer
+                            width: descriptionColumn.width
+                            clip: true
+                            height: 170
+                            boundsBehavior: Flickable.StopAtBounds
+                            boundsMovement: Flickable.StopAtBounds
+                            contentWidth: width
+                            contentHeight: descriptionText.height
+                            ScrollBar.vertical: ScrollBar {
+                                active: true
                             }
 
-                            MouseArea {
-                                anchors.fill: parent
-                                acceptedButtons: Qt.NoButton
-                                cursorShape: parent.hoveredLink ? Qt.PointingHandCursor : Qt.ArrowCursor
+                            PlainText {
+                                id: descriptionText
+                                width: descriptionContainer.width - 10
+                                fontPointSize: 10
+                                leftPadding: 8
+                                topPadding: 4
+                                wrapMode: Text.WordWrap
+                                text: "<b>Описание:</b> " + releasesViewModel.openedReleaseDescription
+                                onLinkActivated: {
+                                    releasesViewModel.openDescriptionLink(link);
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    acceptedButtons: Qt.NoButton
+                                    cursorShape: parent.hoveredLink ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                }
                             }
                         }
                     }
@@ -1903,7 +1945,8 @@ Page {
                             width: 40
                             iconColor: ApplicationTheme.filterIconButtonColor
                             hoverColor: ApplicationTheme.filterIconButtonHoverColor
-                            iconPath: "../Assets/Icons/close.svg"
+                            overlayVisible: false
+                            iconPath: assetsLocation.iconsPath + "coloredclosewindow.svg"
                             iconWidth: 28
                             iconHeight: 28
                             onButtonPressed: {
@@ -1915,11 +1958,10 @@ Page {
                             width: 40
                             hoverColor: ApplicationTheme.filterIconButtonHoverColor
                             overlayVisible: false
-                            iconPath: "../Assets/Icons/copy.svg"
+                            iconPath: assetsLocation.iconsPath + "copy.svg"
                             iconWidth: 26
                             iconHeight: 26
                             onButtonPressed: {
-                                if (Qt.platform.os !== "windows") webView.item.visible = false;
                                 cardCopyMenu.open();
                             }
 
@@ -1931,9 +1973,6 @@ Page {
                             CommonMenu {
                                 id: cardCopyMenu
                                 width: 350
-                                onClosed: {
-                                    if (Qt.platform.os !== "windows") webView.item.visible = true;
-                                }
 
                                 CommonMenuItem {
                                     text: "Копировать название"
@@ -1971,49 +2010,6 @@ Page {
                         IconButton {
                             height: 40
                             width: 40
-                            overlayVisible: false
-                            hoverColor: ApplicationTheme.filterIconButtonHoverColor
-                            iconPath: "../Assets/Icons/vk.svg"
-                            iconWidth: 26
-                            iconHeight: 26
-                            onButtonPressed: {
-                                if (Qt.platform.os !== "windows") webView.item.visible = false;
-                                vkontakteMenu.open();
-                            }
-
-                            CommonMenu {
-                                id: vkontakteMenu
-                                width: 350
-                                onClosed: {
-                                    if (Qt.platform.os !== "windows") webView.item.visible = true;
-                                }
-
-                                CommonMenuItem {
-                                    text: "Авторизоваться для комментариев"
-                                    onPressed: {
-                                        webView.item.url = "https://oauth.vk.com/authorize?client_id=-1&display=widget&widget=4&redirect_uri=https://vk.com/";
-                                    }
-                                }
-                                CommonMenuItem {
-                                    text: "Переоткрыть комментарии"
-                                    onPressed: {
-                                        webView.item.url = releasesViewModel.getVkontakteCommentPage(releasesViewModel.openedReleaseCode);
-                                        if (vkCommentsWindow.opened) vkCommentsWindow.refreshComments();
-                                    }
-                                }
-                                CommonMenuItem {
-                                    enabled: !vkCommentsWindow.opened
-                                    text: "Открыть в отдельном окне"
-                                    onPressed: {
-                                        vkCommentsWindow.setModalVisible(true);
-                                        vkontakteMenu.close();
-                                    }
-                                }
-                            }
-                        }
-                        IconButton {
-                            height: 40
-                            width: 40
                             iconColor: ApplicationTheme.filterIconButtonColor
                             hoverColor: ApplicationTheme.filterIconButtonHoverColor
                             iconPath: assetsLocation.iconsPath + "coloredeye.svg"
@@ -2021,16 +2017,12 @@ Page {
                             iconWidth: 26
                             iconHeight: 26
                             onButtonPressed: {
-                                if (Qt.platform.os !== "windows") webView.item.visible = false;
                                 seenMarkMenu.open();
                             }
 
                             CommonMenu {
                                 id: seenMarkMenu
                                 width: 350
-                                onClosed: {
-                                    if (Qt.platform.os !== "windows") webView.item.visible = true;
-                                }
 
                                 CommonMenuItem {
                                     text: "Отметить как просмотренное"
@@ -2077,16 +2069,12 @@ Page {
                             iconWidth: 26
                             iconHeight: 26
                             onButtonPressed: {
-                                if (Qt.platform.os !== "windows") webView.item.visible = false;
                                 cardFavoritesMenu.open();
                             }
 
                             CommonMenu {
                                 id: cardFavoritesMenu
                                 width: 350
-                                onClosed: {
-                                    if (Qt.platform.os !== "windows") webView.item.visible = true;
-                                }
 
                                 CommonMenuItem {
                                     enabled: !releasesViewModel.openedReleaseInFavorites
@@ -2115,16 +2103,12 @@ Page {
                             iconWidth: 26
                             iconHeight: 26
                             onButtonPressed: {
-                                if (Qt.platform.os !== "windows") webView.item.visible = false;
                                 externalPlayerMenu.open();
                             }
 
                             CommonMenu {
                                 id: externalPlayerMenu
                                 width: 380
-                                onClosed: {
-                                    if (Qt.platform.os !== "windows") webView.item.visible = true;
-                                }
 
                                 CommonMenuItem {
                                     text: "Открыть во внешнем плеере в HD качестве"
@@ -2180,20 +2164,16 @@ Page {
                             width: 40
                             overlayVisible: false
                             hoverColor: ApplicationTheme.filterIconButtonHoverColor
-                            iconPath: "../Assets/Icons/online.svg"
+                            iconPath: assetsLocation.iconsPath + "online.svg"
                             iconWidth: 26
                             iconHeight: 26
                             onButtonPressed: {
-                                if (Qt.platform.os !== "windows") webView.item.visible = false;
                                 setSeriesMenu.open();
                             }
 
                             CommonMenu {
                                 id: setSeriesMenu
                                 width: 330
-                                onClosed: {
-                                    if (Qt.platform.os !== "windows") webView.item.visible = true;
-                                }
 
                                 Repeater {
                                     model: releasesViewModel.isOpenedCard ? releasesViewModel.openedReleaseCountVideos : 0
@@ -2204,7 +2184,6 @@ Page {
                                             watchSingleRelease(releasesViewModel.openedReleaseId, releasesViewModel.openedReleaseVideos, index, releasesViewModel.openedReleasePoster);
 
                                             releasesViewModel.hideAfterWatchReleaseCard();
-                                            if (Qt.platform.os !== "windows") webView.item.visible = true;
                                         }
                                     }
                                 }
@@ -2213,6 +2192,7 @@ Page {
                     }
                 }
                 Rectangle {
+                    id: releaseCardControlsContainer
                     color: "transparent"
                     width: cardContainer.width
                     height: 60
@@ -2223,7 +2203,6 @@ Page {
                         anchors.left: parent.left
                         text: qsTr("Скачать")
                         onClicked: {
-                            if (Qt.platform.os !== "windows") webView.item.visible = false;
                             dowloadTorrent.open();
                         }
 
@@ -2231,9 +2210,6 @@ Page {
                             id: dowloadTorrent
                             y: parent.height - parent.height
                             width: 380
-                            onClosed: {
-                                if (Qt.platform.os !== "windows") webView.item.visible = true;
-                            }
 
                             Repeater {
                                 model: releasesViewModel.openedCardTorrents
@@ -2278,7 +2254,6 @@ Page {
 
                             releasesViewModel.hideAfterWatchReleaseCard();
                             releasePosterPreview.isVisible = false;
-                            if (Qt.platform.os !== "windows") webView.item.visible = true;
                         }
                     }
 
@@ -2288,26 +2263,89 @@ Page {
                         anchors.rightMargin: 10
                     }
 
-                    PlainText {
+                    RoundedActionButton {
+                        id: openCommentsButton
+                        text: qsTr("Открыть комментарии")
                         anchors.verticalCenter: parent.verticalCenter
                         anchors.centerIn: parent
-                        visible: webView.item && webView.item.loading
-                        fontPointSize: 11
-                        text: "Загрузка комментариев..."
+                        onClicked: {
+                            const url = releasesViewModel.getVkontakteCommentPage(releasesViewModel.openedReleaseCode);
+                            Qt.openUrlExternally(url);
+                        }
                     }
                 }
-                Loader {
-                    id: webView
-                    //sourceComponent: releasesViewModel.isOpenedCard && !vkCommentsWindow.opened ? webViewComponent : null
-                }
-                /*Component {
-                    id: webViewComponent
 
-                    WebEngineView {
-                        width: cardContainer.width
-                        height: cardContainer.height - releaseInfo.height - 60
+                Item {
+                    width: cardContainer.width
+                    height: 30
+
+                    PlainText {
+                        anchors.centerIn: parent
+                        fontPointSize: 11
+                        text: releaseCardMenuListModel.selectedTitle
                     }
-                }*/
+
+                    IconButton {
+                        anchors.right: parent.right
+                        anchors.rightMargin: 4
+                        anchors.verticalCenter: parent.verticalCenter
+                        height: 26
+                        width: 26
+                        overlayVisible: false
+                        hoverColor: ApplicationTheme.filterIconButtonHoverColor
+                        iconWidth: 22
+                        iconHeight: 22
+                        iconPath: assetsLocation.iconsPath + "allreleases.svg"
+                        onButtonPressed: {
+                            releaseCardSubMenu.open();
+                        }
+
+                        CommonMenu {
+                            id: releaseCardSubMenu
+                            width: 330
+
+                            ReleaseCardMenuListModel {
+                                id: releaseCardMenuListModel
+                            }
+
+                            Repeater {
+                                model: releaseCardMenuListModel
+
+                                CommonMenuItem {
+                                    text: title
+                                    onPressed: {
+                                        releaseCardSubMenu.close();
+                                        releaseCardMenuListModel.select(id);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Item {
+                    width: cardContainer.width
+                    height: 330
+                    ReleaseSeriesList {
+                        visible: releaseCardMenuListModel.isReleaseSeries
+                        width: cardContainer.width
+                        releaseId: releasesViewModel.openedReleaseId
+                        onOpenRelease: {
+                            releasesViewModel.showReleaseCard(releaseId);
+                        }
+                    }
+
+                    ReleaseOnlineVideosList {
+                        visible: releaseCardMenuListModel.isOnlineVideos
+                        width: cardContainer.width
+                        releaseId: releasesViewModel.openedReleaseId
+                        onOpenVideo: {
+                            watchSingleRelease(releasesViewModel.openedReleaseId, releasesViewModel.openedReleaseVideos, videoId, releasesViewModel.openedReleasePoster);
+
+                            releasesViewModel.hideAfterWatchReleaseCard();
+                        }
+                    }
+                }
             }
         }
 
@@ -2342,6 +2380,13 @@ Page {
 
     ReleasePosterPreview {
         id: releasePosterPreview
+    }
+
+    InfoForNewcomers {
+        id: infoForNewcomers
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        anchors.leftMargin: 40
     }
 
     MessageModal {
@@ -2475,6 +2520,7 @@ Page {
         const userSettings = JSON.parse(localStorage.getUserSettings());
         downloadTorrentMode.currentIndex = userSettings.torrentDownloadMode;
         notificationForFavorites.checked = userSettings.notificationForFavorites;
+        releasesViewModel.items.filterByFavorites = notificationForFavorites.checked;
         darkModeSwitch.checked = applicationSettings.isDarkTheme;
         clearFilterAfterChangeSectionSwitch.checked = userSettings.clearFiltersAfterChangeSection;
         compactModeSwitch.checked = userSettings.compactMode;

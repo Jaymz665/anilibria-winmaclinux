@@ -52,6 +52,9 @@
 #include "Classes/ViewModels/myanilibriaviewmodel.h"
 #include "Classes/ListModels/releasesimplelistmodel.h"
 #include "Classes/ListModels/myanilibrialistmodel.h"
+#include "Classes/ListModels/releaseserieslistmodel.h"
+#include "Classes/ListModels/releasecardmenulistmodel.h"
+#include "Classes/ListModels/releaseonlineserieslistmodel.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -59,11 +62,6 @@
 
 int main(int argc, char *argv[])
 {
-#if QT_VERSION <= QT_VERSION_CHECK(6, 0, 0)
-    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
-#endif
-
 #ifdef Q_OS_WIN
     if (argc == 2 && QString(argv[1]) == "outputlog") {
         FreeConsole();
@@ -83,13 +81,10 @@ int main(int argc, char *argv[])
     if (argc >= 2 && QString(argv[1]) == "portable") {
         IsPortable = true;
     }
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
-    //QtWebEngine::initialize();
-#endif
+
     QGuiApplication app(argc, argv);
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-    //QtWebEngine::initialize();
-#endif
+    app.setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+
     qmlRegisterType<SynchronizationService>("Anilibria.Services", 1, 0, "SynchronizationService");
     qmlRegisterType<LocalStorageService>("Anilibria.Services", 1, 0, "LocalStorage");
     qmlRegisterType<ApplicationSettings>("Anilibria.Services", 1, 0, "ApplicationSettings");    
@@ -120,6 +115,9 @@ int main(int argc, char *argv[])
     qmlRegisterType<MyAnilibriaViewModel>("Anilibria.ViewModels", 1, 0, "MyAnilibriaViewModel");
     qmlRegisterType<ReleaseSimpleListModel>("Anilibria.ListModels", 1, 0, "ReleaseSimpleListModel");
     qmlRegisterType<MyAnilibriaListModel>("Anilibria.ListModels", 1, 0, "MyAnilibriaListModel");
+    qmlRegisterType<ReleaseSeriesListModel>("Anilibria.ListModels", 1, 0, "ReleaseSeriesListModel");
+    qmlRegisterType<ReleaseCardMenuListModel>("Anilibria.ListModels", 1, 0, "ReleaseCardMenuListModel");
+    qmlRegisterType<ReleaseOnlineSeriesListModel>("Anilibria.ListModels", 1, 0, "ReleaseOnlineSeriesListModel");
 
     QCoreApplication::setOrganizationDomain("anilibria.tv");
     QCoreApplication::setOrganizationName("EmptyFlow");

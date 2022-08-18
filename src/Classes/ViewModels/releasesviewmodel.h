@@ -1,3 +1,21 @@
+/*
+    AniLibria - desktop client for the website anilibria.tv
+    Copyright (C) 2021 Roman Vladimirov
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef RELEASESVIEWMODEL_H
 #define RELEASESVIEWMODEL_H
 
@@ -70,6 +88,7 @@ class ReleasesViewModel : public QObject
     Q_PROPERTY(bool openedReleaseInHided READ openedReleaseInHided NOTIFY openedReleaseInHidedChanged)
     Q_PROPERTY(bool openedReleaseInFavorites READ openedReleaseInFavorites NOTIFY openedReleaseInFavoritesChanged)
     Q_PROPERTY(QString openedReleaseVideos READ openedReleaseVideos NOTIFY openedReleaseVideosChanged)
+    Q_PROPERTY(QString openedReleaseAnnounce READ openedReleaseAnnounce NOTIFY openedReleaseAnnounceChanged)
     Q_PROPERTY(bool synchronizationEnabled READ synchronizationEnabled WRITE setSynchronizationEnabled NOTIFY synchronizationEnabledChanged)
     Q_PROPERTY(QString newEntities READ newEntities WRITE setNewEntities NOTIFY newEntitiesChanged)
     Q_PROPERTY(bool notCloseReleaseCardAfterWatch READ notCloseReleaseCardAfterWatch WRITE setNotCloseReleaseCardAfterWatch NOTIFY notCloseReleaseCardAfterWatchChanged)
@@ -112,6 +131,7 @@ private:
     QString m_newEntities { "" };
     QScopedPointer<QList<std::tuple<int, int>>> m_sectionSorting { new QList<std::tuple<int, int>>() };
     bool m_notCloseReleaseCardAfterWatch { false };
+    QString m_openedReleaseAnnounce { "" };
 
 public:
     explicit ReleasesViewModel(QObject *parent = nullptr);
@@ -203,6 +223,7 @@ public:
     bool openedReleaseInHided() const noexcept { return m_openedRelease != nullptr ? m_hiddenReleases->contains(m_openedRelease->id()) : false; }
     bool openedReleaseInFavorites() const noexcept { return m_openedRelease != nullptr ? m_userFavorites->contains(m_openedRelease->id()) : false; }
     QString openedReleaseVideos() const noexcept { return m_openedRelease != nullptr ? m_openedRelease->videos() : ""; }
+    QString openedReleaseAnnounce() const noexcept { return m_openedRelease != nullptr ? m_openedRelease->announce() : ""; }
     QStringList getMostPopularGenres() const noexcept;
     QStringList getMostPopularVoices() const noexcept;
     void fillNewInFavorites(QList<FullReleaseModel*>* list) const noexcept;
@@ -253,10 +274,12 @@ public:
     Q_INVOKABLE void setSeenMark(int id, int seriaId, bool marked);
     QHash<QString, bool>* getSeenMarks();
     void updateAllReleases(const QString &releases, bool insideData);
+    uint32_t getCountFromChanges(const QList<int> *releases, bool filterByFavorites);
     Q_INVOKABLE void openInExternalPlayer(const QString& url);
     Q_INVOKABLE void prepareTorrentsForListItem(const int id);
     Q_INVOKABLE void clearDeletedInCacheMarks();
     FullReleaseModel* getReleaseById(int id) const noexcept;
+    void resetReleaseChanges(int releaseId) noexcept;
     quint32 m_seedValue { 0 };
 
 private:
@@ -286,7 +309,6 @@ private:
     int getCountOnlyFavorites(QList<int>* changes) const noexcept;
     QString getMultipleLinks(QString text) const noexcept;
     FullReleaseModel* getReleaseByCode(QString code) const noexcept;
-    void resetReleaseChanges(int releaseId) noexcept;
     int randomBetween(int low, int high) const noexcept;
     void saveReleasesFromMemoryToFile();
     void mapToFullReleaseModel(QJsonObject &&jsonObject, const bool isFirstStart, QSharedPointer<QSet<int>> hittedIds);
@@ -358,6 +380,7 @@ signals:
     void itemTorrentsChanged();
     void userActivityChanged();
     void hasCinemahallNotSeenVideosChanged();
+    void openedReleaseAnnounceChanged();
 
 };
 

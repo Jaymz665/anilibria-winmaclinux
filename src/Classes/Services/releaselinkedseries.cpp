@@ -188,6 +188,34 @@ int ReleaseLinkedSeries::getSortedOrder(int id) const noexcept
     return 0;
 }
 
+void ReleaseLinkedSeries::fillReleaseSeries(QList<FullReleaseModel *> *list, const int id) noexcept
+{
+    auto iterator = std::find_if(
+        m_series->cbegin(),
+        m_series->cend(),
+        [id] (ReleaseSeriesModel* model) {
+            return model->releaseIds()->contains(id);
+        }
+    );
+
+    if (iterator == m_series->cend()) return;
+
+    auto item = *iterator;
+    auto idsCollection = item->releaseIds();
+
+    for (auto i = 0; i < idsCollection->count(); i++) {
+        list->append(nullptr);
+    }
+
+    foreach (auto release, *m_releases) {
+        auto releaseId = release->id();
+        if (idsCollection->contains(releaseId)) {
+            auto releaseIndex = idsCollection->indexOf(releaseId);
+            (*list)[releaseIndex] = release;
+        }
+    }
+}
+
 int ReleaseLinkedSeries::getNextLinkedRelease(const int currentRelease)
 {
     foreach (auto item, *m_series) {
@@ -245,19 +273,21 @@ void ReleaseLinkedSeries::filterSeries()
     m_filtering = true;
     m_filteredSeries->clear();
 
-    auto nameFilter = m_nameFilter;
+    auto nameFilter = m_nameFilter.toLower();
 
     std::copy_if(
         m_series->begin(),
         m_series->end(),
         std::back_inserter(*m_filteredSeries),
         [nameFilter] (ReleaseSeriesModel* model) {
+            if (model->genresAsString().toLower().contains(nameFilter)) return true;
+
             auto titles = model->titles();
             auto title = std::find_if(
                 titles->begin(),
                 titles->end(),
                 [nameFilter](const QVariant& title) {
-                    return title.toString().toLower().contains(nameFilter.toLower());
+                    return title.toString().toLower().contains(nameFilter);
                 }
             );
 

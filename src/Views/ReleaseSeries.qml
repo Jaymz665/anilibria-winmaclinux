@@ -16,11 +16,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.3
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
-import Anilibria.Services 1.0
+import Anilibria.Services
 import "../Theme"
 import "../Controls"
 
@@ -81,7 +81,7 @@ Page {
                     anchors.centerIn: parent
                     width: 310
                     height: 40
-                    placeholder: "Введите название релиза"
+                    placeholder: "Введите название релиза или жанра"
                     onCompleteEditing: {
                         releaseLinkedSeries.nameFilter = textContent;
                         releaseLinkedSeries.filterSeries();

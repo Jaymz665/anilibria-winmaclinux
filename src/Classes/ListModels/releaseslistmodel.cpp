@@ -438,6 +438,14 @@ int ReleasesListModel::getScheduleDayNumber(const QString &day) const noexcept
     return -1;
 }
 
+void ReleasesListModel::setFilterByFavorites(bool filterByFavorites) noexcept
+{
+    if (m_filterByFavorites == filterByFavorites) return;
+
+    m_filterByFavorites = filterByFavorites;
+    emit filterByFavoritesChanged();
+}
+
 QSharedPointer<QSet<int>> ReleasesListModel::getSelectedReleases()
 {
     return m_selectedReleases;
@@ -570,8 +578,10 @@ void ReleasesListModel::refresh()
         if (m_hasReleaseSeriesFilter && linkedReleases != nullptr && !(linkedReleases->contains(release->id()))) continue;
 
         //favorite mark
-        if (m_favoriteMarkFilter == 1 && !m_userFavorites->contains(release->id())) continue;
-        if (m_favoriteMarkFilter == 2 && m_userFavorites->contains(release->id())) continue;
+        auto inFavorites = m_userFavorites->contains(release->id());
+
+        if (m_favoriteMarkFilter == 1 && !inFavorites) continue;
+        if (m_favoriteMarkFilter == 2 && inFavorites) continue;
 
         //seen mark
         auto countVideos = seenMarks.contains(release->id()) ? seenMarks.value(release->id()) : 0;
@@ -581,7 +591,8 @@ void ReleasesListModel::refresh()
         if (m_seenMarkFilter == 3 && !(seenState == 2)) continue;
 
         //favorites section
-        if (m_section == FavoriteSection && !m_userFavorites->contains(release->id())) continue;
+
+        if (m_section == FavoriteSection && !inFavorites) continue;
 
         if (m_section == ScheduleSection && !m_scheduleReleases->contains(release->id())) continue;
 
@@ -593,13 +604,9 @@ void ReleasesListModel::refresh()
 
         if (m_section == NewTorrentSeriesSection && !m_changesModel->newTorrentSeries()->contains(release->id())) continue;
 
-        //TODO: add getting from options
-        auto notificationForFavorites = false;//m_UserSettingsModel->notificationForFavorites();
-        bool isInFavorites = m_userFavorites->contains(release->id());
-
         if ((m_section == NewOnlineSeriesSection ||
            m_section == NewTorrentsSection ||
-           m_section == NewTorrentSeriesSection) && notificationForFavorites && !isInFavorites) continue;
+           m_section == NewTorrentSeriesSection) && m_filterByFavorites && !inFavorites) continue;
 
         if (m_section == HistorySection && !(m_historyModels->contains(release->id()) && m_historyModels->value(release->id())->timestamp() > 0)) continue;
 
@@ -1020,11 +1027,14 @@ void ReleasesListModel::refreshFilteredReleaseById(int id)
 
 QString ReleasesListModel::getCurrentSeason()
 {
+    auto currentYear = QString::number(QDate::currentDate().year());
     QList<int> seasonsCounters;
     for (int i = 0; i < 4; i++) seasonsCounters.append(0);
 
     foreach (auto release, *m_releases) {
         if (!m_scheduleReleases->contains(release->id())) continue;
+        if (release->status().toLower() != "в работе") continue;
+        if (release->year() != currentYear) continue;
 
         auto season = release->season().toLower();
         if (season == winterValue) seasonsCounters[winter]++;

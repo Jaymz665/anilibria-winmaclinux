@@ -227,8 +227,7 @@ void OnlinePlayerViewModel::setSendPlaybackToRemoteSwitch(bool sendPlaybackToRem
 void OnlinePlayerViewModel::setVolumeSlider(int volumeSlider) noexcept
 {
     if (m_volumeSlider == volumeSlider) return;
-
-    m_volumeSlider = volumeSlider;
+    m_volumeSlider = volumeSlider < 0 ? 0 : volumeSlider;
     emit volumeSliderChanged();
 }
 
@@ -352,6 +351,14 @@ void OnlinePlayerViewModel::setDisplaySkipOpening(bool displaySkipOpening) noexc
 
     m_displaySkipOpening = displaySkipOpening;
     emit displaySkipOpeningChanged();
+}
+
+std::tuple<int, int> OnlinePlayerViewModel::getSeenVideoPosition(int releaseId)
+{
+    if (!m_seenModels->contains(releaseId)) return std::make_tuple(-1, -1);
+
+    auto seenModel = m_seenModels->value(releaseId);
+    return std::make_tuple(seenModel->videoId(), seenModel->videoPosition());
 }
 
 void OnlinePlayerViewModel::toggleFullScreen()
@@ -528,7 +535,9 @@ int OnlinePlayerViewModel::getCurrentVideoSeenVideoPosition()
     if (!m_seenModels->contains(m_selectedRelease)) return 0;
 
     auto seenModel = m_seenModels->value(m_selectedRelease);
-    return seenModel->videoPosition();
+    if (m_selectedVideo == seenModel->videoId()) return seenModel->videoPosition();
+
+    return 0;
 }
 
 static bool compareSeenTimeStampDescending(const SeenModel* first, const SeenModel* second)
@@ -605,6 +614,7 @@ void OnlinePlayerViewModel::quickSetupForSingleRelease(int releaseId)
     emit playInPlayer();
     emit saveToWatchHistory(m_navigateReleaseId);
     emit needScrollSeriaPosition();
+    m_releasesViewModel->resetReleaseChanges(m_selectedRelease);
 }
 
 void OnlinePlayerViewModel::quickSetupForMultipleRelease(const QList<int> releaseIds)
@@ -649,7 +659,7 @@ void OnlinePlayerViewModel::quickSetupForFavoritesCinemahall()
 
     QList<FullReleaseModel*> fullReleases;
     m_releasesViewModel->getFavoritesReleases(&fullReleases);
-
+    foreach (auto fullRelease, fullReleases) m_releasesViewModel->resetReleaseChanges(fullRelease->id());
     m_videos->setVideosFromCinemahall(std::move(fullReleases));
 
     emit refreshSeenMarks();
@@ -710,6 +720,8 @@ void OnlinePlayerViewModel::setupForSingleRelease()
     emit playInPlayer();
     emit saveToWatchHistory(m_navigateReleaseId);
     emit needScrollSeriaPosition();
+
+    m_releasesViewModel->resetReleaseChanges(m_selectedRelease);
 }
 
 void OnlinePlayerViewModel::setupForMultipleRelease()
@@ -721,6 +733,7 @@ void OnlinePlayerViewModel::setupForMultipleRelease()
     foreach (auto selectedRelease, *selectedReleases) {
         releases.append(m_releasesViewModel->getReleaseById(selectedRelease));
     }
+    foreach (auto fullRelease, releases) m_releasesViewModel->resetReleaseChanges(fullRelease->id());
     setSeenMarkedAtEnd(false);
     setShowNextPosterRelease(false);
     setIsCinemahall(false);
@@ -760,7 +773,7 @@ void OnlinePlayerViewModel::setupForCinemahall()
     setIsMultipleRelease(false);
 
     auto fullReleases = m_releasesViewModel->cinemahall()->getCinemahallReleases();
-
+    foreach (auto fullRelease, fullReleases) m_releasesViewModel->resetReleaseChanges(fullRelease->id());
     m_videos->setVideosFromCinemahall(std::move(fullReleases));
 
     emit refreshSeenMarks();
@@ -1060,7 +1073,8 @@ OnlineVideoModel *OnlinePlayerViewModel::previousNotSeenVideo()
 
 void OnlinePlayerViewModel::receiveCommand(const unsigned int id, const QString &command, const QString &argument)
 {
-    qDebug() << "receiveCommand:" << command << " " << argument;
+    if (argument.isEmpty()){
+    }
 
     if (command == "getcurrentvideosource"){
          m_remotePlayer->sendCommandToUser(id, m_videoSourceChangedCommand, m_videoSource);

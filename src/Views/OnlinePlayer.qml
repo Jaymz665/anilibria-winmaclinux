@@ -16,9 +16,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import QtQuick 2.12
-import QtQuick.Controls 2.12
-import QtQuick.Layouts 1.3
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 import QtMultimedia
 import Qt5Compat.GraphicalEffects
 import "../Controls"
@@ -27,7 +27,6 @@ import "Videoplayer"
 
 Page {
     id: _page
-    focus: true
     property var seenVideo: ({})
     property var seenMarks: ({})
     property var videoPlayerSource
@@ -50,7 +49,7 @@ Page {
 
     onStopInPlayer: {
         playerLoader.item.stop();
-    }    
+    }
 
     Keys.onSpacePressed: {
         if (playerLoader.item.playbackState === MediaPlayer.PlayingState) {
@@ -252,7 +251,7 @@ Page {
         function loaderVolumeChanged() {
             volumeSlider.value = playerLoader.item.volume * 100;
             onlinePlayerViewModel.volumeSlider = volumeSlider.value;
-            if (applicationSettings.sendVolumeToRemote) onlinePlayerViewModel.broadcastVolume(volumeSlider.value);
+            if (applicationSettings.sendVolumeToRemote) onlinePlayerViewModel.broadcastVolume(onlinePlayerViewModel.volumeSlider);
         }
 
         function loaderStatusChanged() {
@@ -1440,6 +1439,5 @@ Page {
     Component.onCompleted: {
         volumeSlider.value = playerLoader.item.volume * 100;
     }
-
 }
 
