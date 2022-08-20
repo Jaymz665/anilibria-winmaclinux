@@ -1320,10 +1320,6 @@ ApplicationWindow {
         }
     }
 
-    Component.onCompleted: {
-        player.play()
-    }
-
     Item {
         id: assetsLocation
         property string path: Qt.resolvedUrl("../Assets/")

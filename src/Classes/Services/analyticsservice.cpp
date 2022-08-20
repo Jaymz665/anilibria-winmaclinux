@@ -62,7 +62,7 @@ void AnalyticsService::sendPostEvent(QString category, QString message, QString 
     }
 #else
 
-    auto networkManager = new QNetworkAccessManager(this);
+    /* auto networkManager = new QNetworkAccessManager(this);
 
     auto uniqueName = QSysInfo::machineUniqueId();
     QString cid;
@@ -109,6 +109,6 @@ void AnalyticsService::sendPostEvent(QString category, QString message, QString 
     request.setRawHeader("User-Agent", userAgent.toUtf8());
     request.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("plain/text;charset=UTF-8"));
 
-    networkManager->post(request, eventName.toUtf8());
+    networkManager->post(request, eventName.toUtf8()); */
 #endif
 }
