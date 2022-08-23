@@ -53,6 +53,9 @@ Dialog {
         width: parent.width
 
         Text {
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: parent.left
+            anchors.leftMargin: 4
             text: "Превью"
         }
 
@@ -90,8 +93,10 @@ Dialog {
             height: header.height
 
             Image {
-                anchors.fill: parent
-                source: assetsLocation.iconsPath + "close.svg"
+                width: 16
+                height: 16
+                anchors.centerIn: parent
+                source: assetsLocation.iconsPath + "coloredclosewindow.svg"
                 mipmap: true
             }
 
@@ -183,7 +188,7 @@ Dialog {
                         controlPanel.forceActiveFocus();
                     }
                     onMoved: {
-                        videoplayer.innerPlayer.volume - value;
+                        videoplayer.innerPlayer.volume = volumeSlider.value;
                         onlinePlayerViewModel.volumeSlider = volumeSlider.value;
                     }
                 }
@@ -214,7 +219,7 @@ Dialog {
 
                     IconButton {
                         id: playButton
-                        visible: onlinePlayerWindowViewModel.playerButtonVisible
+                        visible: !videoplayer.innerPlayer.isPlayed
                         width: 40
                         height: 40
                         iconColor: ApplicationTheme.filterIconButtonColor
@@ -223,12 +228,12 @@ Dialog {
                         iconWidth: 24
                         iconHeight: 24
                         onButtonPressed: {
-                            root.videoSource.play();
+                            videoplayer.innerPlayer.play();
                         }
                     }
                     IconButton {
                         id: pauseButton
-                        visible: onlinePlayerWindowViewModel.pauseButtonVisible
+                        visible: videoplayer.innerPlayer.isPlayed
                         width: 40
                         height: 40
                         iconColor: ApplicationTheme.filterIconButtonColor
@@ -237,7 +242,7 @@ Dialog {
                         iconWidth: 24
                         iconHeight: 24
                         onButtonPressed: {
-                            root.videoSource.pause();
+                            videoplayer.innerPlayer.pause();
                         }
                     }
 
