@@ -19,11 +19,12 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtMultimedia
 import Qt5Compat.GraphicalEffects
 import "../Controls"
 import "../Theme"
 import "Videoplayer"
+import MDKPlayer
+import QmlVideoPlayer.Enums
 
 Page {
     id: _page
@@ -32,6 +33,7 @@ Page {
     property var videoPlayerSource
     property var videoOutputSource
     property var lastPlayerPosition
+    property alias innerPlayer: videoPlayer
 
     signal navigateFrom()
     signal setReleaseVideo()
@@ -44,20 +46,20 @@ Page {
     signal playerCreated()
 
     onPlayInPlayer: {
-        playerLoader.item.play();
+        videoPlayer.play();
     }
 
     onStopInPlayer: {
-        playerLoader.item.stop();
+        videoPlayer.stop();
     }
 
     Keys.onSpacePressed: {
-        if (playerLoader.item.playbackState === MediaPlayer.PlayingState) {
-            playerLoader.item.pause();
+        if (videoPlayer.isPlayed) {
+            videoPlayer.pause();
             return;
         }
-        if (playerLoader.item.playbackState === MediaPlayer.PausedState || playerLoader.item.playbackState === MediaPlayer.StoppedState) {
-            playerLoader.item.play();
+        if (videoPlayer.isPaused) {
+            videoPlayer.play();
         }
     }
 
@@ -77,21 +79,19 @@ Page {
             onlinePlayerViewModel.toggleFullScreen();
         }
         if (event.key === Qt.Key_Up) {
-            if (playerLoader.item.volume < 1) playerLoader.item.volume += .1;
-            if (playerLoader.item.volume > 1) playerLoader.item.volume = 1;
+            if (videoPlayer.volume < 100) videoPlayer.volume += 10;
 
-            volumeSlider.value = playerLoader.item.volume * 100;
+            volumeSlider.value = videoPlayer.volume;
         }
         if (event.key === Qt.Key_Down) {
-            if (playerLoader.item.volume > 0) playerLoader.item.volume -= .1;
-            if (playerLoader.item.volume < 0) playerLoader.item.volume = 0;
+            if (videoPlayer.volume > 0) videoPlayer.volume -= 10;
 
-            volumeSlider.value = playerLoader.item.volume * 100;
+            volumeSlider.value = videoPlayer.volume;
         }
-        if (event.key === Qt.Key_M || event.key === 1068) playerLoader.item.muted = !playerLoader.item.muted;
+        if (event.key === Qt.Key_M || event.key === 1068) videoPlayer.isMute = !videoPlayer.isMute;
         if ((event.key === Qt.Key_T || event.key === 1045) && !autoTopMost.checked) windowSettings.toggleStayOnTopMode();
-        if (event.key === Qt.Key_Left) playerLoader.item.seek(onlinePlayerViewModel.jumpInPlayer(jumpMinuteComboBox.currentIndex, jumpSecondComboBox.currentIndex, true));
-        if (event.key === Qt.Key_Right) playerLoader.item.seek(onlinePlayerViewModel.jumpInPlayer(jumpMinuteComboBox.currentIndex, jumpSecondComboBox.currentIndex, false));
+        if (event.key === Qt.Key_Left) videoPlayer.seek(onlinePlayerViewModel.jumpInPlayer(jumpMinuteComboBox.currentIndex, jumpSecondComboBox.currentIndex, true));
+        if (event.key === Qt.Key_Right) videoPlayer.seek(onlinePlayerViewModel.jumpInPlayer(jumpMinuteComboBox.currentIndex, jumpSecondComboBox.currentIndex, false));
         if (event.key === Qt.Key_Home && !autoTopMost.checked) windowSettings.setStayOnTop();
         if (event.key === Qt.Key_End && !autoTopMost.checked) windowSettings.unsetStayOnTop();
     }
@@ -104,10 +104,10 @@ Page {
         windowSettings.unsetStayOnTop();
         onlinePlayerViewModel.isFullScreen = false;
         const enableVideoPreview = !onlinePlayerWindowViewModel.isStandartPlayer || (onlinePlayerWindowViewModel.isStandartPlayer && onlinePlayerWindowViewModel.isQt515);
-        if (enableVideoPreview && playerLoader.item.playbackState === MediaPlayer.PlayingState && showVideoPreview.checked) {
+        if (enableVideoPreview && videoPlayer.isPlayed && showVideoPreview.checked) {
             onlinePlayerWindow.showWindow();
         } else {
-            playerLoader.item.pause();
+            videoPlayer.pause();
         }
     }
 
@@ -116,7 +116,7 @@ Page {
         if (onlinePlayerWindowViewModel.opened) onlinePlayerWindow.hideWindow(false);
         onlinePlayerViewModel.isFromNavigated = true;
         const userSettings = JSON.parse(localStorage.getUserSettings());
-        playerLoader.item.volume = userSettings.volume;
+        videoPlayer.volume = userSettings.volume;
         autoNextVideo.checked = userSettings.autoNextVideo;
         autoTopMost.checked = userSettings.autoTopMost;
         jumpMinuteComboBox.currentIndex = onlinePlayerViewModel.jumpMinutes.indexOf(userSettings.jumpMinute);
@@ -129,7 +129,7 @@ Page {
         remotePlayerPortComboBox.currentIndex = onlinePlayerViewModel.ports.indexOf(applicationSettings.remotePort);
         showVideoPreview.checked = userSettings.showVideoPreview;
 
-        if (autoTopMost.checked && playerLoader.item.playbackState === MediaPlayer.PlayingState) windowSettings.setStayOnTop();
+        if (autoTopMost.checked && videoPlayer.isPlayed) windowSettings.setStayOnTop();
         switch (userSettings.quality) {
             case 0:
                 onlinePlayerViewModel.videoQuality = "sd";
@@ -153,7 +153,6 @@ Page {
 
             onlinePlayerViewModel.setupForSingleRelease();
         }
-
     }
 
     anchors.fill: parent
@@ -175,7 +174,7 @@ Page {
         anchors.fill: parent
         hoverEnabled: true
         onClicked: {
-            if (playerLoader.item.playbackState === MediaPlayer.PlayingState) {
+            if (videoPlayer.isPlayed) {
                 if (controlPanel.opacity !== 1)playerTimer.restart();
                 _page.setControlVisible(!(controlPanel.opacity === 1));
             }
@@ -183,9 +182,9 @@ Page {
         onDoubleClicked: {
             onlinePlayerViewModel.toggleFullScreen();
         }
-        onPositionChanged: {
-            /*if (!(playerLoader.item.playbackState === MediaPlayer.PlayingState)) {
-                if (controlPanel.opacity === 0) _page.setControlVisible(true);
+        onPositionChanged: function (mouse) {
+            if (!videoPlayer.isPlayed && controlPanel.opacity === 0) {
+                _page.setControlVisible(true);
                 return;
             }
 
@@ -197,104 +196,30 @@ Page {
                 playerTimer.stop();
             } else {
                 playerTimer.restart();
-            }*/
+            }
         }
         onExited: {
             if (_page.height - onlinePlayerViewModel.lastMouseYPosition < 10) if (!playerTimer.running) playerTimer.restart();
         }
     }
 
-    Loader {
-        id: playerLoader
+    MDKPlayer {
+        id: videoPlayer
         anchors.fill: parent
-        source: onlinePlayerWindowViewModel.isStandartPlayer ? `Videoplayer/QtPlayer515.qml` : `Videoplayer/QtAvPlayer.qml`
-        Component.onCompleted: {
-            _page.videoPlayerSource = playerLoader.item.videoPlayerSource;
-            _page.videoOutputSource = playerLoader.item.videoOutputSource;
-
-            playerCreated();
-
-            playerLoader.item.source = Qt.binding(function() { return onlinePlayerViewModel.videoSource; });
-            playerLoader.item.playbackRate = Qt.binding(function() { return onlinePlayerViewModel.playbackRate; });
-
-            playerLoader.item.playbackStateChanged.connect(loaderPlaybackStateChanged);
-            playerLoader.item.volumeChanged.connect(loaderVolumeChanged);
-            playerLoader.item.statusChanged.connect(loaderStatusChanged);
-            playerLoader.item.positionChanged.connect(loaderPositionChanged);
+        source: onlinePlayerViewModel.videoSource
+        scaleMode: QmlVideoPlayer.Crop
+        onMediaEnded: {
+            if (autoNextVideo.checked) onlinePlayerViewModel.nextVideo();
         }
-
-        function loaderPlaybackStateChanged() {
-            onlinePlayerViewModel.playerPlaybackState = playerLoader.item.playbackState;
-            const playbackState = onlinePlayerViewModel.playerPlaybackState;
-            if (playbackState === MediaPlayer.PlayingState && autoTopMost.checked) {
-                windowSettings.setStayOnTop();
-            } else {
-                if (autoTopMost.checked) windowSettings.unsetStayOnTop();
-            }
-
-            releasePosterArea.visible = showReleaseInfo.checked && playbackState !== MediaPlayer.PlayingState;
-            playButton.visible = playbackState === MediaPlayer.PausedState || playbackState === MediaPlayer.StoppedState;
-            pauseButton.visible = playbackState === MediaPlayer.PlayingState;
-            if (playbackState === MediaPlayer.PlayingState) {
-                playerTimer.start();
-            } else {
-                playerTimer.stop();
-                _page.setControlVisible(true);
-            }
-
-            if (!sendPlaybackToRemoteSwitch.checked) return;
-
-            if (playbackState === MediaPlayer.PlayingState) onlinePlayerViewModel.broadcastPlaybackState("play");
-            if (playbackState === MediaPlayer.PausedState) onlinePlayerViewModel.broadcastPlaybackState("pause");
-        }
-
-        function loaderVolumeChanged() {
-            volumeSlider.value = playerLoader.item.volume * 100;
-            onlinePlayerViewModel.volumeSlider = volumeSlider.value;
-            if (applicationSettings.sendVolumeToRemote) onlinePlayerViewModel.broadcastVolume(onlinePlayerViewModel.volumeSlider);
-        }
-
-        function loaderStatusChanged() {
-            const status = playerLoader.item.status;
-            if (status === MediaPlayer.Loading) onlinePlayerViewModel.isBuffering = true;
-
-            if (status === MediaPlayer.EndOfMedia && autoNextVideo.checked) onlinePlayerViewModel.nextVideo();
-
-            if (status === MediaPlayer.InvalidMedia) {
-                console.log("InvalidMedia")
-            }
-
-            if (status === MediaPlayer.Buffering) onlinePlayerViewModel.isBuffering = true;
-
-            if (status === MediaPlayer.Buffered) {
-                onlinePlayerViewModel.isBuffering = false;
-                if (onlinePlayerViewModel.restorePosition > 0){
-                    playerLoader.item.seek(onlinePlayerViewModel.restorePosition);
-                    if (playerLoader.item.position >= onlinePlayerViewModel.restorePosition) onlinePlayerViewModel.restorePosition = 0;
-                } else {
-                    if (onlinePlayerViewModel.isFromNavigated) {
-                        onlinePlayerViewModel.isFromNavigated = false;
-
-                        const videoPosition = onlinePlayerViewModel.getCurrentVideoSeenVideoPosition();
-                        if (videoPosition > 0) {
-                            playerLoader.item.seek(videoPosition);
-                        }
-                    }
-                }
-            }
-        }
-
-        function loaderPositionChanged() {
-            const position = playerLoader.item.position;
-            const duration = playerLoader.item.duration;
-            const playBackState = playerLoader.item.playbackState;
-            const status = playerLoader.item.status;
+        onPositionChanged: {
+            const position = videoPlayer.position;
+            const duration = videoPlayer.duration;
 
             if (!playerLocation.pressed && onlinePlayerViewModel.lastMovedPosition === 0) playerLocation.value = position;
 
             onlinePlayerViewModel.changeVideoPosition(duration, position);
 
-            if (onlinePlayerViewModel.positionIterator < 20 && playBackState === MediaPlayer.PlayingState && status === MediaPlayer.Buffered) onlinePlayerViewModel.positionIterator++;
+            if (onlinePlayerViewModel.positionIterator < 20 && videoPlayer.isPlayed && videoPlayer.buffering) onlinePlayerViewModel.positionIterator++;
 
             if (onlinePlayerViewModel.positionIterator >= 20) {
                 onlinePlayerViewModel.positionIterator = 0;
@@ -303,7 +228,7 @@ Page {
 
             if (!releasesViewModel.getSeriaSeenMark(onlinePlayerViewModel.selectedRelease, onlinePlayerViewModel.selectedVideo)) {
                 if (duration > 0 && position > 0) {
-                    const positionPercent = position / duration * 100;
+                    const positionPercent = position / duration;
                     if (positionPercent >= 90 && !onlinePlayerViewModel.seenMarkedAtEnd) {
                         releasesViewModel.setSeenMark(onlinePlayerViewModel.selectedRelease, onlinePlayerViewModel.selectedVideo, true);
                         onlinePlayerViewModel.seenMarkedAtEnd = true;
@@ -320,7 +245,92 @@ Page {
                 }
             }
         }
+        onDurationChanged: {
+
+        }
+        onVolumeChanged: {
+            volumeSlider.value = videoPlayer.volume;
+            onlinePlayerViewModel.volumeSlider = volumeSlider.value;
+            if (applicationSettings.sendVolumeToRemote) onlinePlayerViewModel.broadcastVolume(onlinePlayerViewModel.volumeSlider);
+        }
+        onMediaStatusChanged: {
+            if (!onlinePlayerViewModel.isBuffering && videoPlayer.buffering) onlinePlayerViewModel.isBuffering = true;
+
+            /*if (status === MediaPlayer.InvalidMedia) {
+                console.log("InvalidMedia")
+            }*/
+
+            if (onlinePlayerViewModel.isBuffering && !videoPlayer.buffering) {
+                onlinePlayerViewModel.isBuffering = false;
+                if (onlinePlayerViewModel.restorePosition > 0){
+                    videoPlayer.seek(onlinePlayerViewModel.restorePosition);
+                    if (videoPlayer.position >= onlinePlayerViewModel.restorePosition) onlinePlayerViewModel.restorePosition = 0;
+                } else {
+                    if (onlinePlayerViewModel.isFromNavigated) {
+                        onlinePlayerViewModel.isFromNavigated = false;
+
+                        const videoPosition = onlinePlayerViewModel.getCurrentVideoSeenVideoPosition();
+                        if (videoPosition > 0) {
+                            videoPlayer.seek(videoPosition);
+                        }
+                    }
+                }
+            }
+        }
+        onPlayerStateChanged: {
+            //TODO: remake for playBackState viewmodel!!!!
+            //onlinePlayerViewModel.playerPlaybackState = videoPlayer.playbackState;
+
+            if (videoPlayer.isPlayed && autoTopMost.checked) {
+                windowSettings.setStayOnTop();
+            } else {
+                if (autoTopMost.checked) windowSettings.unsetStayOnTop();
+            }
+
+            releasePosterArea.visible = showReleaseInfo.checked && !videoPlayer.isPlayed;
+            playButton.visible = !videoPlayer.isPlayed;
+            pauseButton.visible = videoPlayer.isPlayed;
+            if (videoPlayer.isPlayed) {
+                playerTimer.start();
+            } else {
+                playerTimer.stop();
+                _page.setControlVisible(true);
+            }
+
+            if (!sendPlaybackToRemoteSwitch.checked) return;
+
+            if (videoPlayer.isPlayed) onlinePlayerViewModel.broadcastPlaybackState("play");
+            if (videoPlayer.isPaused) onlinePlayerViewModel.broadcastPlaybackState("pause");
+        }
     }
+
+    /*Loader {
+        id: playerLoader
+        anchors.fill: parent
+        source: onlinePlayerWindowViewModel.isStandartPlayer ? `Videoplayer/QtPlayer515.qml` : `Videoplayer/QtAvPlayer.qml`
+        Component.onCompleted: {
+            _page.videoPlayerSource = videoPlayer.videoPlayerSource;
+            _page.videoOutputSource = videoPlayer.videoOutputSource;
+
+            playerCreated();
+
+            videoPlayer.source = Qt.binding(function() { return onlinePlayerViewModel.videoSource; });
+            videoPlayer.playbackRate = Qt.binding(function() { return onlinePlayerViewModel.playbackRate; });
+
+            videoPlayer.playbackStateChanged.connect(loaderPlaybackStateChanged);
+            videoPlayer.volumeChanged.connect(loaderVolumeChanged);
+            videoPlayer.statusChanged.connect(loaderStatusChanged);
+            videoPlayer.positionChanged.connect(loaderPositionChanged);
+        }
+
+        function loaderPlaybackStateChanged() {
+
+        }
+
+        function loaderStatusChanged() {
+
+        }
+    }*/
 
     Rectangle {
         id: seriesPopup
@@ -470,17 +480,17 @@ Page {
 
             Slider {
                 id: playerLocation
-                visible: playerLoader.item.duration > 0
+                visible: videoPlayer.duration > 0
                 height: 20
                 width: controlPanel.width
                 from: 1
                 value: 1
-                to: playerLoader.item.duration
+                to: videoPlayer.duration
                 onPressedChanged: {
                     if (!pressed && onlinePlayerViewModel.lastMovedPosition > 0) {
-                        playerLoader.item.seek(onlinePlayerViewModel.lastMovedPosition);
+                        videoPlayer.seek(onlinePlayerViewModel.lastMovedPosition);
                         onlinePlayerViewModel.lastMovedPosition = 0;
-                        onlinePlayerViewModel.broadcastVideoPosition(onlinePlayerViewModel.lastMovedPosition.toString() + `/` + playerLoader.item.duration.toString());                        
+                        onlinePlayerViewModel.broadcastVideoPosition(onlinePlayerViewModel.lastMovedPosition.toString() + `/` + videoPlayer.duration.toString());
                     }
                     controlPanel.forceActiveFocus();
                 }
@@ -494,7 +504,7 @@ Page {
                 width: 2
                 height: 20
                 color: "transparent"
-                visible: playerLoader.item.duration === 0
+                visible: videoPlayer.duration === 0
             }
 
             Item {
@@ -513,10 +523,10 @@ Page {
                         height: 20
                         width: 60
                         text: "1080p"
-                        visible: playerLoader.item.duration > 0 && onlinePlayerViewModel.isFullHdAllowed
+                        visible: videoPlayer.duration > 0 && onlinePlayerViewModel.isFullHdAllowed
                         isChecked: onlinePlayerViewModel.videoQuality === `fullhd`
                         onButtonClicked: {
-                            onlinePlayerViewModel.restorePosition = playerLoader.item.position;
+                            onlinePlayerViewModel.restorePosition = videoPlayer.position;
                             onlinePlayerViewModel.changeVideoQuality(`fullhd`);
                             localStorage.setVideoQuality(2);
                         }
@@ -524,11 +534,11 @@ Page {
                     ToggleButton {
                         height: 20
                         width: 60
-                        visible: playerLoader.item.duration > 0
+                        visible: videoPlayer.duration > 0
                         text: "720p"
                         isChecked: onlinePlayerViewModel.videoQuality === `hd`
                         onButtonClicked: {
-                            onlinePlayerViewModel.restorePosition = playerLoader.item.position;
+                            onlinePlayerViewModel.restorePosition = videoPlayer.position;
                             onlinePlayerViewModel.changeVideoQuality(`hd`);
                             localStorage.setVideoQuality(1);
                         }
@@ -536,11 +546,11 @@ Page {
                     ToggleButton {
                         height: 20
                         width: 60
-                        visible: playerLoader.item.duration > 0
+                        visible: videoPlayer.duration > 0
                         text: "480p"
                         isChecked: onlinePlayerViewModel.videoQuality === `sd`
                         onButtonClicked: {
-                            onlinePlayerViewModel.restorePosition = playerLoader.item.position;
+                            onlinePlayerViewModel.restorePosition = videoPlayer.position;
                             onlinePlayerViewModel.changeVideoQuality(`sd`);
                             localStorage.setVideoQuality(0);
                         }
@@ -548,7 +558,7 @@ Page {
                     Rectangle {
                         width: 20
                         height: 20
-                        visible: playerLoader.item.duration > 0
+                        visible: videoPlayer.duration > 0
                         color: "transparent"
                         PlainText {
                             anchors.centerIn: parent
@@ -559,7 +569,7 @@ Page {
                     ToggleButton {
                         height: 20
                         width: 40
-                        visible: playerLoader.item.duration > 0
+                        visible: videoPlayer.duration > 0
                         text: "x0.25"
                         isChecked: onlinePlayerViewModel.playbackRate === 0.25
                         onButtonClicked: {
@@ -569,7 +579,7 @@ Page {
                     ToggleButton {
                         height: 20
                         width: 40
-                        visible: playerLoader.item.duration > 0
+                        visible: videoPlayer.duration > 0
                         text: "x0.5"
                         isChecked: onlinePlayerViewModel.playbackRate === 0.5
                         onButtonClicked: {
@@ -579,7 +589,7 @@ Page {
                     ToggleButton {
                         height: 20
                         width: 40
-                        visible: playerLoader.item.duration > 0
+                        visible: videoPlayer.duration > 0
                         text: "x0.75"
                         isChecked: onlinePlayerViewModel.playbackRate === 0.75
                         onButtonClicked: {
@@ -589,7 +599,7 @@ Page {
                     ToggleButton {
                         height: 20
                         width: 40
-                        visible: playerLoader.item.duration > 0
+                        visible: videoPlayer.duration > 0
                         text: "x1"
                         isChecked: onlinePlayerViewModel.playbackRate === 1
                         onButtonClicked: {
@@ -599,7 +609,7 @@ Page {
                     ToggleButton {
                         height: 20
                         width: 40
-                        visible: playerLoader.item.duration > 0
+                        visible: videoPlayer.duration > 0
                         text: "x1.25"
                         isChecked: onlinePlayerViewModel.playbackRate === 1.1
                         onButtonClicked: {
@@ -609,7 +619,7 @@ Page {
                     ToggleButton {
                         height: 20
                         width: 40
-                        visible: playerLoader.item.duration > 0
+                        visible: videoPlayer.duration > 0
                         text: "x1.5"
                         isChecked: onlinePlayerViewModel.playbackRate === 1.2
                         onButtonClicked: {
@@ -619,7 +629,7 @@ Page {
                     ToggleButton {
                         height: 20
                         width: 40
-                        visible: playerLoader.item.duration > 0
+                        visible: videoPlayer.duration > 0
                         text: "x1.75"
                         isChecked: onlinePlayerViewModel.playbackRate === 1.3
                         onButtonClicked: {
@@ -629,7 +639,7 @@ Page {
                     ToggleButton {
                         height: 20
                         width: 40
-                        visible: playerLoader.item.duration > 0
+                        visible: videoPlayer.duration > 0
                         text: "x2"
                         isChecked: onlinePlayerViewModel.playbackRate === 1.5
                         onButtonClicked: {
@@ -639,7 +649,7 @@ Page {
                     ToggleButton {
                         height: 20
                         width: 40
-                        visible: playerLoader.item.duration > 0
+                        visible: videoPlayer.duration > 0
                         text: "x3"
                         isChecked: onlinePlayerViewModel.playbackRate === 2
                         onButtonClicked: {
@@ -680,13 +690,13 @@ Page {
                     IconButton {
                         width: 40
                         height: 40
-                        iconColor: playerLoader.item.muted ? ApplicationTheme.filterIconButtonGreenColor : ApplicationTheme.filterIconButtonColor
+                        iconColor: videoPlayer.isMute ? ApplicationTheme.filterIconButtonGreenColor : ApplicationTheme.filterIconButtonColor
                         hoverColor: ApplicationTheme.filterIconButtonHoverColor
                         iconPath: "../Assets/Icons/speaker.svg"
                         iconWidth: 24
                         iconHeight: 24
                         onButtonPressed: {
-                            playerLoader.item.muted = !playerLoader.item.muted;
+                            videoPlayer.isMute = !videoPlayer.isMute;
                         }
                     }
                     Slider {
@@ -698,12 +708,12 @@ Page {
                         to: 100
                         onPressedChanged: {
                             if (!pressed) {
-                                localStorage.setVolume(playerLoader.item.volume);
+                                localStorage.setVolume(videoPlayer.volume);
                             }
                             controlPanel.forceActiveFocus();
                         }
                         onMoved: {
-                            playerLoader.item.volume = value / 100;
+                            videoPlayer.volume = value;
                         }
                     }
                     IconButton {
@@ -759,14 +769,14 @@ Page {
                     IconButton {
                         width: 40
                         height: 40
-                        visible: playerLoader.item.duration > 0
+                        visible: videoPlayer.duration > 0
                         iconColor: ApplicationTheme.filterIconButtonColor
                         hoverColor: ApplicationTheme.filterIconButtonHoverColor
                         iconPath: "../Assets/Icons/previous10.svg"
                         iconWidth: 24
                         iconHeight: 24
                         onButtonPressed: {
-                            playerLoader.item.seek(onlinePlayerViewModel.jumpInPlayer(jumpMinuteComboBox.currentIndex, jumpSecondComboBox.currentIndex, true))
+                            videoPlayer.seek(onlinePlayerViewModel.jumpInPlayer(jumpMinuteComboBox.currentIndex, jumpSecondComboBox.currentIndex, true))
                         }
                     }
                     IconButton {
@@ -796,7 +806,7 @@ Page {
                         iconWidth: 24
                         iconHeight: 24
                         onButtonPressed: {
-                            playerLoader.item.play();
+                            videoPlayer.play();
                         }
                     }
                     IconButton {
@@ -810,7 +820,7 @@ Page {
                         iconWidth: 24
                         iconHeight: 24
                         onButtonPressed: {
-                            playerLoader.item.pause();
+                            videoPlayer.pause();
                         }
                     }
                     IconButton {
@@ -832,14 +842,14 @@ Page {
                     IconButton {
                         width: 40
                         height: 40
-                        visible: playerLoader.item.duration > 0
+                        visible: videoPlayer.duration > 0
                         iconColor: ApplicationTheme.filterIconButtonColor
                         hoverColor: ApplicationTheme.filterIconButtonHoverColor
                         iconPath: "../Assets/Icons/next30.svg"
                         iconWidth: 24
                         iconHeight: 24
                         onButtonPressed: {
-                            playerLoader.item.seek(onlinePlayerViewModel.jumpInPlayer(jumpMinuteComboBox.currentIndex, jumpSecondComboBox.currentIndex, false));
+                            videoPlayer.seek(onlinePlayerViewModel.jumpInPlayer(jumpMinuteComboBox.currentIndex, jumpSecondComboBox.currentIndex, false));
                         }
                     }
                 }
@@ -1168,12 +1178,12 @@ Page {
                         iconWidth: 29
                         iconHeight: 29
                         onButtonPressed: {
-                            switch (playerLoader.item.fillMode) {
-                                case VideoOutput.PreserveAspectFit:
-                                    playerLoader.item.fillMode = VideoOutput.PreserveAspectCrop;
+                            switch (videoPlayer.scaleMode) {
+                                case QmlVideoPlayer.AspectRation:
+                                    videoPlayer.scaleMode = QmlVideoPlayer.Crop;
                                     break;
-                                case VideoOutput.PreserveAspectCrop:
-                                    playerLoader.item.fillMode = VideoOutput.PreserveAspectFit;
+                                case QmlVideoPlayer.Crop:
+                                    videoPlayer.scaleMode = QmlVideoPlayer.AspectRation;
                                     break;
                             }
                         }
@@ -1306,7 +1316,7 @@ Page {
             anchors.fill: parent
             onPressed: {
                 const position = onlinePlayerViewModel.skipOpening();
-                playerLoader.item.seek(position);
+                videoPlayer.seek(position);
             }
         }
     }
@@ -1399,14 +1409,13 @@ Page {
         }
     }
 
-
     Rectangle {
         width: 80
         height: 80
         color: "white"
         radius: 20
         opacity: 0.8
-        visible: onlinePlayerViewModel.isBuffering
+        visible: videoPlayer.buffering
         anchors.centerIn: parent
         AnimatedImage {
             id: spinner
@@ -1437,7 +1446,7 @@ Page {
     }
 
     Component.onCompleted: {
-        volumeSlider.value = playerLoader.item.volume * 100;
+        volumeSlider.value = videoPlayer.volume;
     }
 }
 

@@ -24,44 +24,90 @@ import QtMultimedia
 import "../Controls"
 import "../Theme"
 import "Videoplayer"
+import MDKPlayer
 
-ApplicationWindow {
+Dialog {
     id: root
-    title: '  '
+    x: 10
+    y: 10
     width: 350
     height: 200
-    flags: Qt.Dialog
-    minimumWidth: 350
-    minimumHeight: 200
-    maximumWidth: 500
-    maximumHeight: 350
-
-    property var videoSource
-    property var videoOutput
+    leftPadding: 1
+    rightPadding: 1
+    bottomPadding: 1
+    topPadding: 1
 
     signal showWindow()
     signal hideWindow(bool paused)
-    signal closeWindow()
-    signal loadPlayer()
 
-    function playerLoadedHandler() {
-        if (!onlinePlayerWindowViewModel.isStandartPlayer) videoOutputLoader.item.source = root.videoSource;
-        if (onlinePlayerWindowViewModel.isQt515 && onlinePlayerWindowViewModel.isStandartPlayer) {
-            root.videoSource.addNewVideoOuput(videoOutputLoader.item);
+    QmlCopyPlayer {
+        id: copyPlayer
+        regionWidth: dialogContent.width - root.leftPadding
+        regionHeight: dialogContent.height
+        playerWidth: videoplayer.innerPlayer.width
+        playerHeight: videoplayer.innerPlayer.height
+    }
+
+    header: Item {
+        id: header
+        height: 20
+        width: parent.width
+
+        Text {
+            text: "Превью"
         }
-        root.videoSource.playbackStateChanged.connect(playbackStateChanged);
-        root.videoSource.audioOutput.volumeChanged.connect(volumeChanged);
-        volumeSlider.value = root.videoSource.volume * 100;
+
+        MouseArea {
+            anchors.fill: parent
+
+            property real startX: 0
+            property real startY: 0
+            property real startPositionX: 0
+            property real startPositionY: 0
+
+            onPressed: {
+                var pos = mapToItem(window.contentItem, mouseX, mouseY)
+                startX = pos.x;
+                startY = pos.y;
+
+                startPositionX = root.x;
+                startPositionY = root.y;
+            }
+
+            onPositionChanged: {
+                if (!pressed) return;
+
+                var pos = mapToItem(window.contentItem, mouseX, mouseY)
+                var deltaX = pos.x-startX;
+                var deltaY = pos.y-startY;
+                root.x = startPositionX + deltaX;
+                root.y = startPositionY + deltaY;
+            }
+        }
+
+        Item {
+            anchors.right: parent.right
+            width: 20
+            height: header.height
+
+            Image {
+                anchors.fill: parent
+                source: assetsLocation.iconsPath + "close.svg"
+                mipmap: true
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                onPressed: {
+                    root.close();
+                }
+            }
+        }
     }
 
-    Loader {
-        id: videoOutputLoader
+    Rectangle {
         anchors.fill: parent
-        source: onlinePlayerWindowViewModel.isStandartPlayer ? (onlinePlayerWindowViewModel.isQt515 ? `Videoplayer/QtVideo515Output.qml` : `Videoplayer/QtVideoOutput.qml`) : `Videoplayer/QtAvVideoOutput.qml`
-    }
-
-    onLoadPlayer: {
-        if (videoOutputLoader.loaded) playerLoadedHandler();
+        color: "black"
     }
 
     MouseArea {
@@ -74,13 +120,13 @@ ApplicationWindow {
             mainViewModel.selectPage("videoplayer");
             hideWindow(false);
         }
-        onPositionChanged: {
-            if (!(root.videoSource.playbackState === MediaPlayer.PlayingState)) {
-                if (controlPanel.opacity === 0) onlinePlayerWindowViewModel.showPanel();
+        onPositionChanged: function (mouse) {
+            if (!videoplayer.innerPlayer.isPlayed) {
+                if (controlPanel.opacity < 0.1) onlinePlayerWindowViewModel.showPanel();
                 return;
             }
 
-            if (controlPanel.opacity !== 1) onlinePlayerWindowViewModel.showPanel();
+            if (controlPanel.opacity > 0.9) onlinePlayerWindowViewModel.showPanel();
             const x = mouse.x;
             const y = mouse.y;
 
@@ -92,6 +138,19 @@ ApplicationWindow {
         }
         onExited: {
             if (!windowPlayerTimer.running) windowPlayerTimer.restart();
+        }
+    }
+
+    Item {
+        id: dialogContent
+        anchors.fill: parent
+
+        ShaderEffectSource {
+            width: copyPlayer.scaledWidth
+            height: copyPlayer.scaledHeight
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.horizontalCenter: parent.horizontalCenter
+            sourceItem: videoplayer.innerPlayer
         }
     }
 
@@ -125,7 +184,8 @@ ApplicationWindow {
                         controlPanel.forceActiveFocus();
                     }
                     onMoved: {
-                        root.videoSource.volume = value / 100;
+                        videoplayer.innerPlayer.volume - value;
+                        onlinePlayerViewModel.volumeSlider = volumeSlider.value;
                     }
                 }
             }
@@ -235,7 +295,7 @@ ApplicationWindow {
         color: "white"
         radius: 20
         opacity: 0.8
-        visible: onlinePlayerViewModel.isBuffering
+        visible: videoplayer.innerPlayer.buffering
         anchors.centerIn: parent
         AnimatedImage {
             id: spinner
@@ -243,6 +303,48 @@ ApplicationWindow {
             paused: !onlinePlayerWindowViewModel.opened
             playing: onlinePlayerWindowViewModel.opened
             source: assetsLocation.path + "Icons/spinner.gif"
+        }
+    }
+
+    Item {
+        height: 10
+        width: 10
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+
+        Image {
+            anchors.fill: parent
+            source: assetsLocation.iconsPath + 'banner.svg'
+            mipmap: true
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            property real startX: 0
+            property real startY: 0
+            property real startWidth: 0
+            property real startHeight: 0
+
+            onPressed: {
+                var pos = mapToItem(window.contentItem, mouseX, mouseY)
+                startX = pos.x;
+                startY = pos.y;
+
+                startWidth = root.width;
+                startHeight = root.height;
+            }
+
+            onPositionChanged: {
+                if (!pressed) return;
+
+                var pos = mapToItem(window.contentItem, mouseX, mouseY)
+                var deltaX = pos.x - startX;
+                var deltaY = pos.y - startY;
+                const newWidth = startWidth + deltaX;
+                const newHeight = startHeight + deltaX;
+                root.width = newWidth > 350 ? 350 : newWidth;
+                root.height = newHeight > 300 ? 300 : newHeight;
+            }
         }
     }
 
@@ -256,35 +358,19 @@ ApplicationWindow {
         }
     }
 
-    function playbackStateChanged() {
-        onlinePlayerWindowViewModel.playbackStateChanged(root.videoSource.playbackState === MediaPlayer.PlayingState);
-    }
-
-    function volumeChanged() {
-        volumeSlider.value = root.videoSource.volume * 100;
-        onlinePlayerViewModel.volumeSlider = volumeSlider.value;
-    }
-
     onShowWindow:  {
-        videoOutputLoader.item.visible = true;
-        show();
+        root.open();
         onlinePlayerWindowViewModel.opened = true;
         onlinePlayerWindowViewModel.showPanel();
     }
 
     onHideWindow: function (paused) {
-        videoOutputLoader.item.visible = false;
-        hide();
+        close();
         onlinePlayerWindowViewModel.opened = false;
-        if (paused) root.videoSource.pause();
+        if (paused) videoplayer.innerPlayer.pause();
     }
 
-    onClosing: {
+    onClosed: {
         hideWindow(true);
-    }
-
-    onCloseWindow: {
-        root.videoSource.playbackStateChanged.disconnect(playbackStateChanged);
-        //root.videoSource.volumeChanged.disconnect(volumeChanged);
     }
 }

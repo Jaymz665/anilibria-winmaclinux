@@ -18,15 +18,16 @@
 
 import QtQuick
 import QtMultimedia
+import MDKPlayer
+import QmlVideoPlayer.Enums
 
 Item {
-    property alias muted: videoPlayer.audioOutput.muted
-    property alias volume: videoPlayer.audioOutput.volume
+    property alias muted: videoPlayer.isMute
+    property alias volume: videoPlayer.volume
     property alias position: videoPlayer.position
     property alias duration: videoPlayer.duration
     property alias playbackState: videoPlayer.playbackState
     property int status: videoPlayer.mediaStatus
-    property alias bufferProgress: videoPlayer.bufferProgress
     property alias source: videoPlayer.source
     property alias playbackRate: videoPlayer.playbackRate
     property alias fillMode: videoOutput.fillMode
@@ -41,8 +42,8 @@ Item {
     signal playerPlaybackStateChanged();
     signal playerStatusChanged();
     signal playerPositionChanged();
-    signal playerBufferProgressChanged();
     signal playerDurationChanged();
+    signal mediaEnded();
 
     onPlay: {
         videoPlayer.play();
@@ -60,7 +61,25 @@ Item {
         videoPlayer.seek(position);
     }
 
-    VideoOutput {
+    MDKPlayer {
+        id: videoPlayer
+        anchors.fill: parent
+        scaleMode: QmlVideoPlayer.AspectRatio
+        onMediaEnded: {
+            mediaEnded();
+        }
+        onPositionChanged: {
+            playerPositionChanged();
+        }
+        onDurationChanged: {
+            playerDurationChanged();
+        }
+        onVolumeChanged: {
+            playerVolumeChanged();
+        }
+    }
+
+    /*VideoOutput {
         id: videoOutput
         anchors.fill: parent
         onStateChanged: {
@@ -101,6 +120,8 @@ Item {
         onDurationChanged: {
             playerDurationChanged();
         }
-    }
+    }*/
+
+
 }
 

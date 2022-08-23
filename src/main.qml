@@ -53,8 +53,7 @@ ApplicationWindow {
     Material.theme: ApplicationTheme.isDarkTheme ? Material.Dark : Material.Light
 
     onClosing: {
-        onlinePlayerWindow.closeWindow();
-        onlinePlayerWindow.hide();
+        onlinePlayerWindow.close();
     }
 
     onActiveChanged: {
@@ -957,9 +956,6 @@ ApplicationWindow {
             onReturnToReleasesPage: {
                 mainViewModel.selectPage("release");
             }
-            onPlayerCreated: {
-                onlinePlayerWindow.loadPlayer();
-            }
         }
 
         Releases {
@@ -1307,8 +1303,6 @@ ApplicationWindow {
 
     OnlinePlayerWindow {
         id: onlinePlayerWindow
-        videoSource: videoplayer.videoPlayerSource
-        videoOutput: videoplayer.videoOutputSource
     }
 
     MyAnilibriaViewModel {

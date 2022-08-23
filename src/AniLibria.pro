@@ -79,6 +79,9 @@ SOURCES += \
     Classes/ListModels/releaseslistmodel.cpp \
     Classes/ListModels/releasetorrentcommonlist.cpp \
     Classes/ListModels/releasetorrentslist.cpp \
+    Classes/MdkSdkIntegration/qmlcopyplayer.cpp \
+    Classes/MdkSdkIntegration/qmlmdkplayer.cpp \
+    Classes/MdkSdkIntegration/videorendererinternal.cpp \
     Classes/Models/changesmodel.cpp \
     Classes/Models/downloaditemmodel.cpp \
     Classes/Models/externalplaylistvideo.cpp \
@@ -163,6 +166,9 @@ HEADERS += \
     Classes/ListModels/releaseslistmodel.h \
     Classes/ListModels/releasetorrentcommonlist.h \
     Classes/ListModels/releasetorrentslist.h \
+    Classes/MdkSdkIntegration/qmlcopyplayer.h \
+    Classes/MdkSdkIntegration/qmlmdkplayer.h \
+    Classes/MdkSdkIntegration/videorendererinternal.h \
     Classes/Models/changesmodel.h \
     Classes/Models/downloaditemmodel.h \
     Classes/Models/externalplaylistvideo.h \
@@ -208,3 +214,34 @@ HEADERS += \
     Classes/ViewModels/youtubeviewmodel.h \
     globalconstants.h \
     globalhelpers.h
+
+# MDK-SDK setup
+
+# Может пригодится для macOS
+# CONFIG -= app_bundle
+
+MDK_SDK = $$PWD/../mdk-sdk
+INCLUDEPATH += $$MDK_SDK/include
+contains(QT_ARCH, x.*64) {
+  android: MDK_ARCH = x86_64
+  else:linux: MDK_ARCH = amd64
+  else: MDK_ARCH = x64
+} else:contains(QT_ARCH, .*86) {
+  MDK_ARCH = x86
+} else:contains(QT_ARCH, a.*64.*) {
+  android: MDK_ARCH = arm64-v8a
+  else: MDK_ARCH = arm64
+} else:contains(QT_ARCH, arm.*) {
+  android: MDK_ARCH = armeabi-v7a
+  else:linux: MDK_ARCH = armhf
+  else: MDK_ARCH = arm
+}
+
+macx {
+  LIBS += -F$$MDK_SDK/lib -F/usr/local/lib -framework mdk
+} else {
+  LIBS += -L$$MDK_SDK/lib/$$MDK_ARCH -lmdk
+  win32: LIBS += -L$$PWD/../../mdk-sdk/bin/$$MDK_ARCH
+}
+linux: LIBS += -Wl,-rpath-link,$$MDK_SDK/lib/$$MDK_ARCH
+linux: LIBS += -Wl,-rpath,$$MDK_SDK/lib/$$MDK_ARCH

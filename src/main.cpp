@@ -21,6 +21,7 @@
 #include <QQmlContext>
 #include <QString>
 #include <QQmlFileSelector>
+#include <QQuickWindow>
 #include "Classes/Services/synchronizationservice.h"
 #include "Classes/Services/localstorageservice.h"
 #include "Classes/Services/applicationsettings.h"
@@ -55,6 +56,8 @@
 #include "Classes/ListModels/releaseserieslistmodel.h"
 #include "Classes/ListModels/releasecardmenulistmodel.h"
 #include "Classes/ListModels/releaseonlineserieslistmodel.h"
+#include "Classes/MdkSdkIntegration/qmlcopyplayer.h"
+#include "Classes/MdkSdkIntegration/qmlmdkplayer.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -62,6 +65,7 @@
 
 int main(int argc, char *argv[])
 {
+    QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
 #ifdef Q_OS_WIN
     if (argc == 2 && QString(argv[1]) == "outputlog") {
         FreeConsole();
@@ -118,6 +122,16 @@ int main(int argc, char *argv[])
     qmlRegisterType<ReleaseSeriesListModel>("Anilibria.ListModels", 1, 0, "ReleaseSeriesListModel");
     qmlRegisterType<ReleaseCardMenuListModel>("Anilibria.ListModels", 1, 0, "ReleaseCardMenuListModel");
     qmlRegisterType<ReleaseOnlineSeriesListModel>("Anilibria.ListModels", 1, 0, "ReleaseOnlineSeriesListModel");
+    qmlRegisterType<QmlMDKPlayer>("MDKPlayer", 1, 0, "MDKPlayer");
+    qmlRegisterType<QmlCopyPlayer>("MDKPlayer", 1, 0, "QmlCopyPlayer");
+    qmlRegisterUncreatableMetaObject(
+      QmlVideoPlayer::staticMetaObject,
+      "QmlVideoPlayer.Enums",
+      1, 0,
+      "QmlVideoPlayer",
+      "Error: only enums"
+    );
+
 
     QCoreApplication::setOrganizationDomain("anilibria.tv");
     QCoreApplication::setOrganizationName("EmptyFlow");
