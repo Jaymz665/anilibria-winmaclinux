@@ -23,7 +23,6 @@ import QtQuick.Controls
 import QtMultimedia
 import "../Controls"
 import "../Theme"
-import "Videoplayer"
 import MDKPlayer
 
 Dialog {
@@ -126,7 +125,7 @@ Dialog {
                 return;
             }
 
-            if (controlPanel.opacity > 0.9) onlinePlayerWindowViewModel.showPanel();
+            if (controlPanel.opacity < 1) onlinePlayerWindowViewModel.showPanel();
             const x = mouse.x;
             const y = mouse.y;
 
@@ -307,8 +306,8 @@ Dialog {
     }
 
     Item {
-        height: 10
-        width: 10
+        height: 20
+        width: 20
         anchors.right: parent.right
         anchors.bottom: parent.bottom
 
@@ -316,6 +315,7 @@ Dialog {
             anchors.fill: parent
             source: assetsLocation.iconsPath + 'banner.svg'
             mipmap: true
+            rotation: 90
         }
 
         MouseArea {
@@ -342,8 +342,8 @@ Dialog {
                 var deltaY = pos.y - startY;
                 const newWidth = startWidth + deltaX;
                 const newHeight = startHeight + deltaX;
-                root.width = newWidth > 350 ? 350 : newWidth;
-                root.height = newHeight > 300 ? 300 : newHeight;
+                root.width = newWidth > 400 ? 400 : newWidth;
+                root.height = newHeight > 350 ? 350 : newHeight;
             }
         }
     }

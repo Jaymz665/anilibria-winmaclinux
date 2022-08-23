@@ -22,7 +22,6 @@ import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import "../Controls"
 import "../Theme"
-import "Videoplayer"
 import MDKPlayer
 import QmlVideoPlayer.Enums
 
@@ -299,8 +298,12 @@ Page {
 
             if (!sendPlaybackToRemoteSwitch.checked) return;
 
-            if (videoPlayer.isPlayed) onlinePlayerViewModel.broadcastPlaybackState("play");
+            if (videoPlayer.isPlayed) {
+                onlinePlayerViewModel.broadcastPlaybackState("play");
+                osExtras.startPreventSleepMode();
+            }
             if (videoPlayer.isPaused) onlinePlayerViewModel.broadcastPlaybackState("pause");
+            if (!videoPlayer.isPlayed) osExtras.stopPreventSleepMode();
         }
     }
 

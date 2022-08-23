@@ -887,15 +887,6 @@ ApplicationWindow {
         onWatchedMinuteInPlayer: {
             userActivityViewModel.addWatchDurationMinute();
         }
-        onPlayerPlaybackStateChanged: {
-            //I'm using hardcode constant because multimedia module loading dynamically
-            const playingState = 1;
-            if (playerPlaybackState === playingState) {
-                osExtras.startPreventSleepMode();
-            } else {
-                osExtras.stopPreventSleepMode();
-            }
-        }
     }
 
     Rectangle {
