@@ -103,7 +103,7 @@ Dialog {
             MouseArea {
                 anchors.fill: parent
                 onPressed: {
-                    root.close();
+                    hideWindow(true);
                 }
             }
         }
@@ -373,9 +373,5 @@ Dialog {
         close();
         onlinePlayerWindowViewModel.opened = false;
         if (paused) videoplayer.innerPlayer.pause();
-    }
-
-    onClosed: {
-        hideWindow(true);
     }
 }

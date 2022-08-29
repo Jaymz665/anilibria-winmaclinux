@@ -168,6 +168,14 @@ Page {
         onTriggered: _page.setControlVisible(false)
     }
 
+    Timer {
+        id: playPlayerTimer
+        interval: 1000
+        running: false
+        repeat: false
+        onTriggered: if (!videoPlayer.isPlayed) videoPlayer.play()
+    }
+
     MouseArea {
         id: mainPlayerMouseArea
         anchors.fill: parent
@@ -210,6 +218,9 @@ Page {
         onMediaEnded: {
             if (autoNextVideo.checked) onlinePlayerViewModel.nextVideo();
         }
+        onSourceChanged: {
+            playPlayerTimer.start();
+        }
         onPositionChanged: {
             const position = videoPlayer.position;
             const duration = videoPlayer.duration;
@@ -243,9 +254,6 @@ Page {
                     }
                 }
             }
-        }
-        onDurationChanged: {
-
         }
         onVolumeChanged: {
             volumeSlider.value = videoPlayer.volume;
@@ -306,34 +314,6 @@ Page {
             if (!videoPlayer.isPlayed) osExtras.stopPreventSleepMode();
         }
     }
-
-    /*Loader {
-        id: playerLoader
-        anchors.fill: parent
-        source: onlinePlayerWindowViewModel.isStandartPlayer ? `Videoplayer/QtPlayer515.qml` : `Videoplayer/QtAvPlayer.qml`
-        Component.onCompleted: {
-            _page.videoPlayerSource = videoPlayer.videoPlayerSource;
-            _page.videoOutputSource = videoPlayer.videoOutputSource;
-
-            playerCreated();
-
-            videoPlayer.source = Qt.binding(function() { return onlinePlayerViewModel.videoSource; });
-            videoPlayer.playbackRate = Qt.binding(function() { return onlinePlayerViewModel.playbackRate; });
-
-            videoPlayer.playbackStateChanged.connect(loaderPlaybackStateChanged);
-            videoPlayer.volumeChanged.connect(loaderVolumeChanged);
-            videoPlayer.statusChanged.connect(loaderStatusChanged);
-            videoPlayer.positionChanged.connect(loaderPositionChanged);
-        }
-
-        function loaderPlaybackStateChanged() {
-
-        }
-
-        function loaderStatusChanged() {
-
-        }
-    }*/
 
     Rectangle {
         id: seriesPopup
@@ -576,7 +556,8 @@ Page {
                         text: "x0.25"
                         isChecked: onlinePlayerViewModel.playbackRate === 0.25
                         onButtonClicked: {
-                            onlinePlayerViewModel.setVideoSpeed(0.25)
+                            videoPlayer.playbackRate = 0.25;
+                            onlinePlayerViewModel.setVideoSpeed(0.25);
                         }
                     }
                     ToggleButton {
@@ -586,6 +567,7 @@ Page {
                         text: "x0.5"
                         isChecked: onlinePlayerViewModel.playbackRate === 0.5
                         onButtonClicked: {
+                            videoPlayer.playbackRate = 0.5;
                             onlinePlayerViewModel.setVideoSpeed(0.5);
                         }
                     }
@@ -596,6 +578,7 @@ Page {
                         text: "x0.75"
                         isChecked: onlinePlayerViewModel.playbackRate === 0.75
                         onButtonClicked: {
+                            videoPlayer.playbackRate = 0.75;
                             onlinePlayerViewModel.setVideoSpeed(0.75);
                         }
                     }
@@ -606,6 +589,7 @@ Page {
                         text: "x1"
                         isChecked: onlinePlayerViewModel.playbackRate === 1
                         onButtonClicked: {
+                            videoPlayer.playbackRate = 1;
                             onlinePlayerViewModel.setVideoSpeed(1);
                         }
                     }
@@ -616,6 +600,7 @@ Page {
                         text: "x1.25"
                         isChecked: onlinePlayerViewModel.playbackRate === 1.1
                         onButtonClicked: {
+                            videoPlayer.playbackRate = 1.1;
                             onlinePlayerViewModel.setVideoSpeed(1.1);
                         }
                     }
@@ -626,6 +611,7 @@ Page {
                         text: "x1.5"
                         isChecked: onlinePlayerViewModel.playbackRate === 1.2
                         onButtonClicked: {
+                            videoPlayer.playbackRate = 1.2;
                             onlinePlayerViewModel.setVideoSpeed(1.2);
                         }
                     }
@@ -636,6 +622,7 @@ Page {
                         text: "x1.75"
                         isChecked: onlinePlayerViewModel.playbackRate === 1.3
                         onButtonClicked: {
+                            videoPlayer.playbackRate = 1.3;
                             onlinePlayerViewModel.setVideoSpeed(1.3);
                         }
                     }
@@ -646,6 +633,7 @@ Page {
                         text: "x2"
                         isChecked: onlinePlayerViewModel.playbackRate === 1.5
                         onButtonClicked: {
+                            videoPlayer.playbackRate = 1.5;
                             onlinePlayerViewModel.setVideoSpeed(1.5);
                         }
                     }
@@ -656,6 +644,7 @@ Page {
                         text: "x3"
                         isChecked: onlinePlayerViewModel.playbackRate === 2
                         onButtonClicked: {
+                            videoPlayer.playbackRate = 2;
                             onlinePlayerViewModel.setVideoSpeed(2);
                         }
                     }
@@ -1182,11 +1171,11 @@ Page {
                         iconHeight: 29
                         onButtonPressed: {
                             switch (videoPlayer.scaleMode) {
-                                case QmlVideoPlayer.AspectRation:
+                                case QmlVideoPlayer.AspectRatio:
                                     videoPlayer.scaleMode = QmlVideoPlayer.Crop;
                                     break;
                                 case QmlVideoPlayer.Crop:
-                                    videoPlayer.scaleMode = QmlVideoPlayer.AspectRation;
+                                    videoPlayer.scaleMode = QmlVideoPlayer.AspectRatio;
                                     break;
                             }
                         }

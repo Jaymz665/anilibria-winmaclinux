@@ -30,9 +30,6 @@ import "Views"
 import "Controls"
 import "Theme"
 
-
-import QtMultimedia
-
 ApplicationWindow {
     id: window
     visible: true
@@ -40,7 +37,7 @@ ApplicationWindow {
     minimumWidth: 800
     minimumHeight: 600
     height: 600
-    title: qsTr("AniLibria.Qt")
+    title: "AniLibria.Qt6"
     font.capitalization: Font.MixedCase
     flags: Qt.FramelessWindowHint | Qt.Window | Qt.WindowMinimizeButtonHint
     property var userModel: ({})
@@ -125,7 +122,7 @@ ApplicationWindow {
                 id: taskbarTitle
                 anchors.centerIn: parent
                 fontPointSize: 12
-                text: "AniLibria.Qt - "
+                text: "AniLibria.Qt6 - "
             }
             AccentText {
                 id: currentPageTitle
@@ -336,12 +333,14 @@ ApplicationWindow {
             anchors.left: goToMyAnilibria.right
             anchors.right: leftHalfScreenWindow.left
             height: parent.height
-            property variant clickPosition: "1,1"
+            property int clickPositionX: 0
+            property int clickPositionY: 0
             onPressed: function (mouse) {
-                windowDraggingArea.clickPosition = Qt.point(mouse.x, mouse.y);
+                clickPositionX = mouse.x;
+                clickPositionY = mouse.y;
             }
-            onPositionChanged: {
-                const delta = Qt.point(mouse.x - clickPosition.x, mouse.y - clickPosition.y);
+            onPositionChanged: function (mouse) {
+                const delta = Qt.point(mouse.x - clickPositionX, mouse.y - clickPositionY);
                 const deltaPosition = Qt.point(window.x + delta.x, window.y + delta.y);
                 window.x = deltaPosition.x;
                 window.y = deltaPosition.y;
@@ -841,7 +840,7 @@ ApplicationWindow {
                     Text {
                         color: "white"
                         font.pointSize: 11
-                        text: qsTr("AniLibria.Qt")
+                        text: qsTr("AniLibria.Qt6")
                     }
                     Text {
                         color: "white"
@@ -875,7 +874,7 @@ ApplicationWindow {
         onNeedScrollSeriaPosition: {
             videoplayer.setSerieScrollPosition();
         }
-        onSaveToWatchHistory: {
+        onSaveToWatchHistory: function (releaseId) {
             releasesViewModel.setToReleaseHistory(releaseId, 1);
         }
         onPlayInPlayer: {
@@ -953,7 +952,7 @@ ApplicationWindow {
             id: releases
             visible: mainViewModel.isReleasesPageVisible
             focus: true
-            onWatchSingleRelease: {
+            onWatchSingleRelease: function (releaseId, videos, startSeria, poster) {
                 onlinePlayerViewModel.customPlaylistPosition = startSeria;
                 onlinePlayerViewModel.navigateReleaseId = releaseId;
                 onlinePlayerViewModel.navigateVideos = videos;

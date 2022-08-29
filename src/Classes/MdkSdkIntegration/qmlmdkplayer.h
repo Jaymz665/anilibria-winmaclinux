@@ -79,7 +79,7 @@ public:
 
     Q_INVOKABLE void play() noexcept;
     Q_INVOKABLE void pause() noexcept;
-    //Q_INVOKABLE void setPlaybackRate(float rate) noexcept;
+    Q_INVOKABLE void stop() noexcept;
     Q_INVOKABLE void seek(unsigned int position) noexcept;
 
 private slots:

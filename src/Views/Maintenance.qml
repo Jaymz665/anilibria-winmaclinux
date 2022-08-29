@@ -20,7 +20,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
-import Anilibria.Services 1.0
+import Anilibria.Services
 import "../Controls"
 import "../Theme"
 

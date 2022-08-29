@@ -21,7 +21,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import Qt5Compat.GraphicalEffects
-import Anilibria.ListModels 1.0
+import Anilibria.ListModels
 import "../Controls"
 import "../Theme"
 
@@ -1582,7 +1582,7 @@ Page {
                 MouseArea {
                     anchors.fill: parent
                     acceptedButtons: Qt.RightButton | Qt.MiddleButton
-                    onWheel: {
+                    onWheel: function (wheel) {
                         if (wheel.angleDelta.y < 0) scrollview.flick(0, -800);
                         if (wheel.angleDelta.y > 0) scrollview.flick(0, 800);
                     }
@@ -2339,7 +2339,7 @@ Page {
                         visible: releaseCardMenuListModel.isOnlineVideos
                         width: cardContainer.width
                         releaseId: releasesViewModel.openedReleaseId
-                        onOpenVideo: {
+                        onOpenVideo: function (videoId) {
                             watchSingleRelease(releasesViewModel.openedReleaseId, releasesViewModel.openedReleaseVideos, videoId, releasesViewModel.openedReleasePoster);
 
                             releasesViewModel.hideAfterWatchReleaseCard();

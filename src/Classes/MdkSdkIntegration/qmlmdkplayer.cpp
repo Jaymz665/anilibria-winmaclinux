@@ -11,7 +11,7 @@ QmlMDKPlayer::QmlMDKPlayer(QQuickItem *parent):
     m_player->setRenderCallback([=](void *){
         QMetaObject::invokeMethod(this, "update");
     });
-    m_player->setBufferRange(1000, 3000, false);
+    m_player->setBufferRange(2000, 5000, false);
     m_player->onStateChanged([=](State state){
         auto stopped = state == State::Stopped || state == State::NotRunning;
         auto paused = state == State::Paused;
@@ -139,6 +139,11 @@ void QmlMDKPlayer::play() noexcept
 void QmlMDKPlayer::pause() noexcept
 {
     m_player->set(PlaybackState::Paused);
+}
+
+void QmlMDKPlayer::stop() noexcept
+{
+    m_player->set(PlaybackState::Stopped);
 }
 
 void QmlMDKPlayer::seek(unsigned int position) noexcept
