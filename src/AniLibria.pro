@@ -217,8 +217,7 @@ HEADERS += \
 
 # MDK-SDK setup
 
-# Может пригодится для macOS
-# CONFIG -= app_bundle
+CONFIG -= app_bundle
 
 MDK_SDK = $$PWD/../mdk-sdk
 INCLUDEPATH += $$MDK_SDK/include
