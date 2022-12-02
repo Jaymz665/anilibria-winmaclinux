@@ -973,6 +973,7 @@ ApplicationWindow {
         applicationSettings: applicationSettings
         localStorage: localStorage
         items.itemWidth: 490
+        items.parentWidth: releases.releasesContainerWidth
         notCloseReleaseCardAfterWatch: userConfigurationViewModel.notCloseReleaseCardAfterWatch
         imageBackgroundViewModel.containerWidth: releases.backgroundImageWidth
         imageBackgroundViewModel.containerHeight: releases.backgroundImageHeight

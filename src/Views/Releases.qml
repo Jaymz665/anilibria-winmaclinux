@@ -41,6 +41,7 @@ Page {
     property bool toggler: false
     property alias backgroundImageWidth: itemsContainer.width
     property alias backgroundImageHeight: itemsContainer.height
+    property alias releasesContainerWidth: scrollview.width
 
     signal navigateFrom()
     signal watchSingleRelease(int releaseId, string videos, int startSeria, string poster)
@@ -1564,8 +1565,8 @@ Page {
                     anchors.fill: parent
                     acceptedButtons: Qt.RightButton | Qt.MiddleButton
                     onWheel: {
-                        if (wheel.angleDelta.y < 0) scrollview.flick(0, -800);
-                        if (wheel.angleDelta.y > 0) scrollview.flick(0, 800);
+                        //if (wheel.angleDelta.y < 0) scrollview.flick(0, -800);
+                        //if (wheel.angleDelta.y > 0) scrollview.flick(0, 800);
                     }
                     onPressed: {
                         multupleMode.checked = !multupleMode.checked;
@@ -1585,104 +1586,132 @@ Page {
                     }
                 }
 
-                Component {
-                    id: releaseDelegate
-                    Rectangle {
-                        color: "transparent"
-                        width: scrollview.cellWidth
-                        height: scrollview.cellHeight
-
-                        ReleaseItem {
-                            anchors.centerIn: parent
-
-                            onLeftClicked: {
-                                if (releasesViewModel.isOpenedCard) return;
-
-                                releasesViewModel.selectRelease(id);
-                            }
-                            onRightClicked: {
-                                multupleMode.checked = !multupleMode.checked;
-                            }
-                            onAddToFavorite: {
-                                releasesViewModel.addReleaseToFavorites(id);
-                                releasesViewModel.clearSelectedReleases();
-                            }
-                            onRemoveFromFavorite: {
-                                releasesViewModel.removeReleaseFromFavorites(id);
-                                releasesViewModel.clearSelectedReleases();
-                            }
-                            onWatchRelease: {
-                                page.watchSingleRelease(id, videos, -1, poster);
-                            }
-                        }
-                    }
-                }
-
-                GridView {
+                Loader {
                     id: scrollview
-                    visible: releasesViewModel.items.isHasReleases  && !releasesViewModel.isGrouped
-                    anchors.horizontalCenter: parent.horizontalCenter
                     height: parent.height
                     width: parent.width
-                    cellWidth: parent.width / Math.floor(parent.width / 490)
-                    cellHeight: 290
-                    delegate: releaseDelegate
-                    model: releasesViewModel.items
-                    flickDeceleration: userConfigurationViewModel.usingScrollAcceleration ? 1000 : 10000
-                    clip: true
-                    ScrollBar.vertical: ScrollBar {
-                        active: true
-                        onPositionChanged: {
-                            if (position < -0.0008 && !releasesViewModel.synchronizationEnabled) {
-                                releasesViewModel.synchronizationEnabled = true;
-                                synchronizationService.synchronizeReleases(1);
+                    asynchronous: true
+                    sourceComponent: releasesViewModel.isGrouped ? listViewComponent : gridViewComponent
+                }
+
+                Component {
+                    id: gridViewComponent
+
+                    GridView {
+                        id: notGroupedGridView
+                        visible: releasesViewModel.items.isHasReleases  && !releasesViewModel.isGrouped
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        height: parent.height
+                        width: parent.width
+                        cellWidth: parent.width / Math.floor(parent.width / 490)
+                        cellHeight: 290
+                        delegate: releaseDelegate
+                        model: releasesViewModel.items
+                        flickDeceleration: userConfigurationViewModel.usingScrollAcceleration ? 1000 : 10000
+                        clip: true
+                        ScrollBar.vertical: ScrollBar {
+                            active: true
+                            onPositionChanged: {
+                                if (position < -0.0008 && !releasesViewModel.synchronizationEnabled) {
+                                    releasesViewModel.synchronizationEnabled = true;
+                                    synchronizationService.synchronizeReleases(1);
+                                }
                             }
                         }
-                    }                    
 
-                    Component.onCompleted: {
-                        scrollview.maximumFlickVelocity = scrollview.maximumFlickVelocity - 1050;
+                        Component {
+                            id: releaseDelegate
+                            Rectangle {
+                                color: "transparent"
+                                width: notGroupedGridView.cellWidth
+                                height: notGroupedGridView.cellHeight
+
+                                ReleaseItem {
+                                    anchors.centerIn: parent
+
+                                    onLeftClicked: {
+                                        if (releasesViewModel.isOpenedCard) return;
+
+                                        releasesViewModel.selectRelease(id);
+                                    }
+                                    onRightClicked: {
+                                        multupleMode.checked = !multupleMode.checked;
+                                    }
+                                    onAddToFavorite: {
+                                        releasesViewModel.addReleaseToFavorites(id);
+                                        releasesViewModel.clearSelectedReleases();
+                                    }
+                                    onRemoveFromFavorite: {
+                                        releasesViewModel.removeReleaseFromFavorites(id);
+                                        releasesViewModel.clearSelectedReleases();
+                                    }
+                                    onWatchRelease: {
+                                        page.watchSingleRelease(id, videos, -1, poster);
+                                    }
+                                }
+                            }
+                        }
+
+                        Component.onCompleted: {
+                            notGroupedGridView.maximumFlickVelocity = notGroupedGridView.maximumFlickVelocity - 1050;
+                        }
                     }
                 }
 
-                ListView {
-                    id: groupedListView
-                    visible: releasesViewModel.items.isHasReleases && releasesViewModel.isGrouped
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    height: parent.height
-                    width: parent.width
-                    delegate: releaseDelegate
-                    model: releasesViewModel.items
-                    flickDeceleration: userConfigurationViewModel.usingScrollAcceleration ? 1000 : 10000
-                    clip: true
-                    section.property: "groupedKey"
-                    section.criteria: ViewSection.FullString
-                    section.labelPositioning: ViewSection.CurrentLabelAtStart
-                    section.delegate: Item {
-                        width: groupedListView.width
-                        height: 30
+                Component {
+                    id: listViewComponent
 
-                        Rectangle {
-                            anchors.fill: parent
-                            color: "red"
-                        }
+                    ListView {
+                        id: groupedListView
+                        visible: releasesViewModel.items.isHasReleases && releasesViewModel.isGrouped
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        height: parent.height
+                        width: parent.width
+                        delegate: Item {
+                            width: 490
+                            height: 290
 
-                        Text {
-                            text: name
-                        }
-                    }
+                            Rectangle {
+                                anchors.fill: parent
+                                color: "green"
+                            }
 
-                    ScrollBar.vertical: ScrollBar {
-                        active: true
-                        onPositionChanged: {
-                            if (position < -0.0008 && !releasesViewModel.synchronizationEnabled) {
-                                releasesViewModel.synchronizationEnabled = true;
-                                synchronizationService.synchronizeReleases(1);
+                            Text {
+                                text: "releases" + groupedReleases
                             }
                         }
-                    }
-                    Component.onCompleted: {
-                        scrollview.maximumFlickVelocity = scrollview.maximumFlickVelocity - 1050;
+                        model: releasesViewModel.items
+                        flickDeceleration: userConfigurationViewModel.usingScrollAcceleration ? 1000 : 10000
+                        clip: true
+                        section.property: "groupedKey"
+                        section.criteria: ViewSection.FullString
+                        section.labelPositioning: ViewSection.InlineLabels
+                        section.delegate: Item {
+                            width: groupedListView.width
+                            height: 30
+
+                            Rectangle {
+                                anchors.fill: parent
+                                color: "red"
+                            }
+
+                            Text {
+                                text: section
+                            }
+                        }
+
+                        ScrollBar.vertical: ScrollBar {
+                            active: true
+                            onPositionChanged: {
+                                if (position < -0.0008 && !releasesViewModel.synchronizationEnabled) {
+                                    releasesViewModel.synchronizationEnabled = true;
+                                    synchronizationService.synchronizeReleases(1);
+                                }
+                            }
+                        }
+                        Component.onCompleted: {
+                            groupedListView.maximumFlickVelocity = groupedListView.maximumFlickVelocity - 1050;
+                        }
                     }
                 }
             }
@@ -1708,7 +1737,7 @@ Page {
                 watchMultipleReleases();
             }
         }
-        IconButton {
+        /*IconButton {
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.topMargin: 8
@@ -1727,7 +1756,7 @@ Page {
                 scrollview.contentY = 0;
             }
 
-        }
+        }*/
     }
 
     ReleaseCard {

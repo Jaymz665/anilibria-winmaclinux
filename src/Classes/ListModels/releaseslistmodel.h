@@ -62,7 +62,7 @@ class ReleasesListModel : public QAbstractListModel
 private:
     QSharedPointer<QList<FullReleaseModel*>> m_releases;
     QScopedPointer<QList<FullReleaseModel*>> m_filteredReleases { new QList<FullReleaseModel*>() };
-    QList<std::tuple<int, int>> m_groups { QList<std::tuple<int, int>>() };
+    QList<std::tuple<QString, QString>> m_groupLines { QList<std::tuple<QString, QString>>() };
     QVector<int>* m_userFavorites { nullptr };
     QHash<QString, bool>* m_seenMarkModels { nullptr };
     QVector<int>* m_hiddenReleases { nullptr };
@@ -118,6 +118,7 @@ private:
         InScheduleRole,
         ScheduledDayRole,
         GroupedKeyRole,
+        GroupedReleasesRole
     };
 
     enum FilterSortingField {
@@ -233,6 +234,8 @@ public:
 
     void setGroupedMode(bool isGrouped) noexcept { m_isGrouped = isGrouped; }
 
+    void refillGroups();
+
     Q_INVOKABLE void refresh();
     Q_INVOKABLE void selectItem(int id);
     Q_INVOKABLE void deselectItem(int id);
@@ -248,6 +251,8 @@ private:
     void sortingFilteringReleases(QHash<int, int>&& seenMarks);
     void refreshFilteredReleaseById(int id);
     QString getCurrentSeason();
+    void fillGroups();
+    void addGroupLine(QList<int>& ids, const QString& key);
 
 signals:
     void titleFilterChanged();

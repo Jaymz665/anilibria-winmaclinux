@@ -72,11 +72,7 @@ int ReleasesListModel::rowCount(const QModelIndex &parent) const
     if (parent.isValid()) return 0;
 
     if (m_isGrouped) {
-        auto count = 0;
-        foreach (auto group, m_groups) {
-            count += std::get<1>(group) / m_columnCount;
-        }
-        return count;
+        return m_groupLines.size();
     } else {
         return m_filteredReleases->size();
     }
@@ -87,9 +83,17 @@ QVariant ReleasesListModel::data(const QModelIndex &index, int role) const
     if (!index.isValid()) return QVariant();
 
     if (m_isGrouped) {
-        auto itemIndex = index.row();
-        auto rowIndex = itemIndex * m_columnCount;
-        //TODO: get all column releases
+        auto groupLine = m_groupLines.value(index.row());
+        switch (role) {
+            case GroupedKeyRole: {
+                auto groupedKey = std::get<0>(groupLine);
+                return QVariant(groupedKey);
+            }
+            case GroupedReleasesRole: {
+                auto groupedLineIds = std::get<1>(groupLine);
+                return groupedLineIds;
+            }
+        }
 
     } else {
         auto release = m_filteredReleases->at(index.row());
@@ -161,6 +165,19 @@ QVariant ReleasesListModel::data(const QModelIndex &index, int role) const
 
 QHash<int, QByteArray> ReleasesListModel::roleNames() const
 {
+    if (m_isGrouped) {
+        return {
+            {
+                GroupedKeyRole,
+                "groupedKey"
+            },
+            {
+                GroupedReleasesRole,
+                "groupedReleases"
+            }
+        };
+    }
+
     return {
         {
             ReleaseIdRole,
@@ -471,6 +488,8 @@ void ReleasesListModel::setParentWidth(int parentWidth) noexcept
     m_columnWidth = m_parentWidth / m_columnCount;
     emit columnWidthChanged();
     emit columnsCountChanged();
+
+    refillGroups();
 }
 
 void ReleasesListModel::setItemWidth(int itemWidth) noexcept
@@ -484,6 +503,15 @@ void ReleasesListModel::setItemWidth(int itemWidth) noexcept
 QSharedPointer<QSet<int>> ReleasesListModel::getSelectedReleases()
 {
     return m_selectedReleases;
+}
+
+void ReleasesListModel::refillGroups()
+{
+    beginResetModel();
+
+    fillGroups();
+
+    endResetModel();
 }
 
 void ReleasesListModel::refresh()
@@ -529,9 +557,6 @@ void ReleasesListModel::refresh()
         voicesFilter = m_voicesFilter.split(",");
         removeTrimsInStringCollection(voicesFilter);
     }
-
-    QMap<QString, int> groupIndexes;
-    int iterator = 0;
 
     foreach (auto release, *m_releases) {
         if (m_hiddenReleases->contains(release->id()) && m_section != HiddenReleasesSection) continue;
@@ -682,21 +707,12 @@ void ReleasesListModel::refresh()
         if (m_section == NotCurrentSeasonSection &&
             !((release->year() != currentYear || (release->year() == currentYear && release->season() != currentSeason)) && release->status().toLower() == "в работе")) continue;
 
-        if (m_isGrouped) {
-            auto groupedKey = m_scheduleReleases->contains(release->id()) ? m_scheduleReleases->value(release->id()) : 9;
-            if (groupIndexes.contains(QString(groupedKey))) {
-                auto existsIndex = groupIndexes[QString(groupedKey)];
-                auto tuple = m_groups[existsIndex];
-                std::get<1>(tuple) += 1;
-                m_groups[existsIndex] = tuple;
-            }
-            m_groups.append(std::make_tuple(iterator, 1));
-        }
-
         m_filteredReleases->append(release);
     }
 
     sortingFilteringReleases(std::move(seenMarks));    
+
+    fillGroups();
 
     endResetModel();
 
@@ -1108,4 +1124,40 @@ QString ReleasesListModel::getCurrentSeason()
     if (maxIndex == summer) return summerValue;
 
     return "";
+}
+
+void ReleasesListModel::fillGroups()
+{
+    QList<int> ids;
+    QString currentGroupedKey = "";
+    m_groupLines.clear();
+    foreach (auto release, *m_filteredReleases) {
+        auto id = release->id();
+        auto groupedKey = QString::number(m_scheduleReleases->contains(id) ? m_scheduleReleases->value(id) : 9);
+        if (currentGroupedKey.isEmpty()) currentGroupedKey = groupedKey;
+        if (groupedKey != currentGroupedKey) {
+            addGroupLine(ids, currentGroupedKey);
+            currentGroupedKey = groupedKey;
+        }
+
+        ids.append(id);
+        if (ids.count() == m_columnCount) {
+            addGroupLine(ids, currentGroupedKey);
+        }
+    }
+}
+
+void ReleasesListModel::addGroupLine(QList<int> &ids, const QString &key)
+{
+    if (ids.isEmpty()) return;
+
+    QString idsItems;
+    int iterator = 0;
+    foreach (auto id, ids) {
+        idsItems = idsItems.append(iterator > 0 ? "," + QString::number(id) : QString::number(id));
+        iterator++;
+    }
+
+    m_groupLines.append(std::make_tuple(key, idsItems));
+    ids.clear();
 }
