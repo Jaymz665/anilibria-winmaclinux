@@ -71,73 +71,88 @@ int ReleasesListModel::rowCount(const QModelIndex &parent) const
 {
     if (parent.isValid()) return 0;
 
-    return m_filteredReleases->size();
+    if (m_isGrouped) {
+        auto count = 0;
+        foreach (auto group, m_groups) {
+            count += std::get<1>(group) / m_columnCount;
+        }
+        return count;
+    } else {
+        return m_filteredReleases->size();
+    }
 }
 
 QVariant ReleasesListModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid()) return QVariant();
 
-    auto release = m_filteredReleases->at(index.row());
-    if (release == nullptr) return QVariant();
+    if (m_isGrouped) {
+        auto itemIndex = index.row();
+        auto rowIndex = itemIndex * m_columnCount;
+        //TODO: get all column releases
 
-    switch (role) {
-        case ReleaseIdRole: {
-            return QVariant(release->id());
-        }
-        case TitleRole: {
-            return QVariant(release->title());
-        }
-        case StatusRole: {
-            return QVariant(release->status());
-        }
-        case SeasonRole: {
-            return QVariant(release->season());
-        }
-        case YearRole: {
-            return QVariant(release->year());
-        }
-        case TypeRole: {
-            return QVariant(release->type());
-        }
-        case GenresRole: {
-            return QVariant(release->genres());
-        }
-        case CountVideosRole: {
-            return QVariant(release->countOnlineVideos());
-        }
-        case CountSeensMarksRole: {
-            return QVariant(getReleaseSeenMarkCount(release->id()));
-        }
-        case DescriptionRole: {
-            return QVariant(release->description());
-        }
-        case PosterRole: {
-            return QVariant(release->poster());
-        }
-        case CountTorrentRole: {
-            return QVariant(release->countTorrents());
-        }
-        case VideosRole: {
-            return QVariant(release->videos());
-        }
-        case InFavoritesRole: {
-            return QVariant(m_userFavorites->contains(release->id()));
-        }
-        case VoicesRole: {
-            return QVariant(release->voicers());
-        }
-        case RatingRole: {
-            return QVariant(release->rating());
-        }
-        case SelectedRole:{
-            return QVariant(m_selectedReleases->contains(release->id()));
-        }
-        case InScheduleRole: {
-            return QVariant(m_scheduleReleases->contains(release->id()));
-        }
-        case ScheduledDayRole: {
-            return m_scheduleReleases->contains(release->id()) ? QVariant(getScheduleDay(m_scheduleReleases->value(release->id()))) : QVariant("");
+    } else {
+        auto release = m_filteredReleases->at(index.row());
+        if (release == nullptr) return QVariant();
+
+        switch (role) {
+            case ReleaseIdRole: {
+                return QVariant(release->id());
+            }
+            case TitleRole: {
+                return QVariant(release->title());
+            }
+            case StatusRole: {
+                return QVariant(release->status());
+            }
+            case SeasonRole: {
+                return QVariant(release->season());
+            }
+            case YearRole: {
+                return QVariant(release->year());
+            }
+            case TypeRole: {
+                return QVariant(release->type());
+            }
+            case GenresRole: {
+                return QVariant(release->genres());
+            }
+            case CountVideosRole: {
+                return QVariant(release->countOnlineVideos());
+            }
+            case CountSeensMarksRole: {
+                return QVariant(getReleaseSeenMarkCount(release->id()));
+            }
+            case DescriptionRole: {
+                return QVariant(release->description());
+            }
+            case PosterRole: {
+                return QVariant(release->poster());
+            }
+            case CountTorrentRole: {
+                return QVariant(release->countTorrents());
+            }
+            case VideosRole: {
+                return QVariant(release->videos());
+            }
+            case InFavoritesRole: {
+                return QVariant(m_userFavorites->contains(release->id()));
+            }
+            case VoicesRole: {
+                return QVariant(release->voicers());
+            }
+            case RatingRole: {
+                return QVariant(release->rating());
+            }
+            case SelectedRole:{
+                return QVariant(m_selectedReleases->contains(release->id()));
+            }
+            case InScheduleRole: {
+                return QVariant(m_scheduleReleases->contains(release->id()));
+            }
+            case ScheduledDayRole: {
+                return m_scheduleReleases->contains(release->id()) ? QVariant(getScheduleDay(m_scheduleReleases->value(release->id()))) : QVariant("");
+            }
         }
     }
 
@@ -446,6 +461,26 @@ void ReleasesListModel::setFilterByFavorites(bool filterByFavorites) noexcept
     emit filterByFavoritesChanged();
 }
 
+void ReleasesListModel::setParentWidth(int parentWidth) noexcept
+{
+    if (m_parentWidth == parentWidth) return;
+
+    m_parentWidth = parentWidth;
+    emit parentWidthChanged();
+    m_columnCount = std::floor(m_parentWidth / m_itemWidth);
+    m_columnWidth = m_parentWidth / m_columnCount;
+    emit columnWidthChanged();
+    emit columnsCountChanged();
+}
+
+void ReleasesListModel::setItemWidth(int itemWidth) noexcept
+{
+    if (m_itemWidth == itemWidth) return;
+
+    m_itemWidth = itemWidth;
+    emit itemWidthChanged();
+}
+
 QSharedPointer<QSet<int>> ReleasesListModel::getSelectedReleases()
 {
     return m_selectedReleases;
@@ -455,7 +490,7 @@ void ReleasesListModel::refresh()
 {
     beginResetModel();
 
-    m_filteredReleases->clear();
+    m_filteredReleases->clear();    
 
     auto currentYear = QString::number(QDate::currentDate().year());
     auto currentSeason = getCurrentSeason();
@@ -494,6 +529,9 @@ void ReleasesListModel::refresh()
         voicesFilter = m_voicesFilter.split(",");
         removeTrimsInStringCollection(voicesFilter);
     }
+
+    QMap<QString, int> groupIndexes;
+    int iterator = 0;
 
     foreach (auto release, *m_releases) {
         if (m_hiddenReleases->contains(release->id()) && m_section != HiddenReleasesSection) continue;
@@ -644,15 +682,26 @@ void ReleasesListModel::refresh()
         if (m_section == NotCurrentSeasonSection &&
             !((release->year() != currentYear || (release->year() == currentYear && release->season() != currentSeason)) && release->status().toLower() == "в работе")) continue;
 
+        if (m_isGrouped) {
+            auto groupedKey = m_scheduleReleases->contains(release->id()) ? m_scheduleReleases->value(release->id()) : 9;
+            if (groupIndexes.contains(QString(groupedKey))) {
+                auto existsIndex = groupIndexes[QString(groupedKey)];
+                auto tuple = m_groups[existsIndex];
+                std::get<1>(tuple) += 1;
+                m_groups[existsIndex] = tuple;
+            }
+            m_groups.append(std::make_tuple(iterator, 1));
+        }
+
         m_filteredReleases->append(release);
     }
 
-    sortingFilteringReleases(std::move(seenMarks));
+    sortingFilteringReleases(std::move(seenMarks));    
 
     endResetModel();
 
     setIsHasReleases(m_filteredReleases->count() > 0);
-    emit countFilteredReleasesChanged();
+    emit countFilteredReleasesChanged();    
 }
 
 void ReleasesListModel::selectItem(int id)

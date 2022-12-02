@@ -54,10 +54,15 @@ class ReleasesListModel : public QAbstractListModel
     Q_PROPERTY(ReleaseLinkedSeries* releaseLinkedSeries READ releaseLinkedSeries WRITE setReleaseLinkedSeries NOTIFY releaseLinkedSeriesChanged)
     Q_PROPERTY(QString scheduleDayFilter READ scheduleDayFilter WRITE setScheduleDayFilter NOTIFY scheduleDayFilterChanged)
     Q_PROPERTY(bool filterByFavorites READ filterByFavorites WRITE setFilterByFavorites NOTIFY filterByFavoritesChanged)
+    Q_PROPERTY(int parentWidth READ parentWidth WRITE setParentWidth NOTIFY parentWidthChanged)
+    Q_PROPERTY(int itemWidth READ itemWidth WRITE setItemWidth NOTIFY itemWidthChanged)
+    Q_PROPERTY(int columnWidth READ columnWidth NOTIFY columnWidthChanged)
+    Q_PROPERTY(int columnsCount READ columnsCount NOTIFY columnsCountChanged)
 
 private:
     QSharedPointer<QList<FullReleaseModel*>> m_releases;
     QScopedPointer<QList<FullReleaseModel*>> m_filteredReleases { new QList<FullReleaseModel*>() };
+    QList<std::tuple<int, int>> m_groups { QList<std::tuple<int, int>>() };
     QVector<int>* m_userFavorites { nullptr };
     QHash<QString, bool>* m_seenMarkModels { nullptr };
     QVector<int>* m_hiddenReleases { nullptr };
@@ -85,7 +90,12 @@ private:
     bool m_isHasReleases { false };
     bool m_hasReleaseSeriesFilter { false };
     bool m_filterByFavorites { false };
-    QString m_scheduleDayFilter { "" };
+    QString m_scheduleDayFilter { "" };   
+    bool m_isGrouped { false };
+    int m_parentWidth { 0 };
+    int m_itemWidth { 0 };
+    int m_columnCount { 0 };
+    int m_columnWidth { 0 };
     QSharedPointer<QSet<int>> m_selectedReleases { new QSet<int>() };
     enum FullReleaseRoles {
         ReleaseIdRole = Qt::UserRole + 1,
@@ -106,7 +116,8 @@ private:
         InFavoritesRole,
         SelectedRole,
         InScheduleRole,
-        ScheduledDayRole
+        ScheduledDayRole,
+        GroupedKeyRole,
     };
 
     enum FilterSortingField {
@@ -208,7 +219,19 @@ public:
     bool filterByFavorites() const noexcept { return m_filterByFavorites; }
     void setFilterByFavorites(bool filterByFavorites) noexcept;
 
+    int parentWidth() const noexcept { return m_parentWidth; }
+    void setParentWidth(int parentWidth) noexcept;
+
+    int itemWidth() const noexcept { return m_itemWidth; }
+    void setItemWidth(int itemWidth) noexcept;
+
+    int columnWidth() const noexcept { return m_columnWidth; }
+
+    int columnsCount() const noexcept { return m_columnCount; }
+
     QSharedPointer<QSet<int>> getSelectedReleases();
+
+    void setGroupedMode(bool isGrouped) noexcept { m_isGrouped = isGrouped; }
 
     Q_INVOKABLE void refresh();
     Q_INVOKABLE void selectItem(int id);
@@ -250,6 +273,10 @@ signals:
     void hasReleaseSeriesFilterChanged();
     void scheduleDayFilterChanged();
     void filterByFavoritesChanged();
+    void parentWidthChanged();
+    void columnWidthChanged();
+    void itemWidthChanged();
+    void columnsCountChanged();
 
 };
 

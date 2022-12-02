@@ -289,6 +289,17 @@ void ReleasesViewModel::setNotCloseReleaseCardAfterWatch(const bool notCloseRele
     emit notCloseReleaseCardAfterWatchChanged();
 }
 
+void ReleasesViewModel::setIsGrouped(bool isGrouped) noexcept
+{
+    if (m_isGrouped == isGrouped) return;
+
+    m_isGrouped = isGrouped;
+    emit isGroupedChanged();
+
+    m_items->setGroupedMode(m_isGrouped);
+    m_items->refresh();
+}
+
 QString ReleasesViewModel::openedReleaseStatusDisplay() const noexcept
 {
     if (m_openedRelease == nullptr) return "";

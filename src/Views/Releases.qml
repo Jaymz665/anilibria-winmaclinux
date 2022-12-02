@@ -1519,13 +1519,24 @@ Page {
                 FilterPanelIconButton {
                     id: sortingDirectionButton
                     anchors.verticalCenter: parent.verticalCenter
-                    anchors.right: parent.right
+                    anchors.right: groupingButton.left
                     anchors.rightMargin: 14
                     iconPath: assetsLocation.iconsPath + (releasesViewModel.items.sortingDescending ? "sortdescending.svg" : "sortascending.svg")
                     tooltipMessage: "Направление сортировки списка"
                     onButtonPressed: {
                         releasesViewModel.items.sortingDescending = !releasesViewModel.items.sortingDescending;
                         releasesViewModel.items.refresh();
+                    }
+                }
+                FilterPanelIconButton {
+                    id: groupingButton
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.right: parent.right
+                    anchors.rightMargin: 14
+                    iconPath: assetsLocation.iconsPath + "sortdescending.svg"
+                    tooltipMessage: (releasesViewModel.isGrouped ? "Выключение" : "Включение") + " режима группировки"
+                    onButtonPressed: {
+                        releasesViewModel.isGrouped = !releasesViewModel.isGrouped;
                     }
                 }
             }
@@ -1574,9 +1585,42 @@ Page {
                     }
                 }
 
+                Component {
+                    id: releaseDelegate
+                    Rectangle {
+                        color: "transparent"
+                        width: scrollview.cellWidth
+                        height: scrollview.cellHeight
+
+                        ReleaseItem {
+                            anchors.centerIn: parent
+
+                            onLeftClicked: {
+                                if (releasesViewModel.isOpenedCard) return;
+
+                                releasesViewModel.selectRelease(id);
+                            }
+                            onRightClicked: {
+                                multupleMode.checked = !multupleMode.checked;
+                            }
+                            onAddToFavorite: {
+                                releasesViewModel.addReleaseToFavorites(id);
+                                releasesViewModel.clearSelectedReleases();
+                            }
+                            onRemoveFromFavorite: {
+                                releasesViewModel.removeReleaseFromFavorites(id);
+                                releasesViewModel.clearSelectedReleases();
+                            }
+                            onWatchRelease: {
+                                page.watchSingleRelease(id, videos, -1, poster);
+                            }
+                        }
+                    }
+                }
+
                 GridView {
                     id: scrollview
-                    visible: releasesViewModel.items.isHasReleases
+                    visible: releasesViewModel.items.isHasReleases  && !releasesViewModel.isGrouped
                     anchors.horizontalCenter: parent.horizontalCenter
                     height: parent.height
                     width: parent.width
@@ -1594,41 +1638,49 @@ Page {
                                 synchronizationService.synchronizeReleases(1);
                             }
                         }
+                    }                    
+
+                    Component.onCompleted: {
+                        scrollview.maximumFlickVelocity = scrollview.maximumFlickVelocity - 1050;
                     }
+                }
 
-                    Component {
-                        id: releaseDelegate
+                ListView {
+                    id: groupedListView
+                    visible: releasesViewModel.items.isHasReleases && releasesViewModel.isGrouped
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    height: parent.height
+                    width: parent.width
+                    delegate: releaseDelegate
+                    model: releasesViewModel.items
+                    flickDeceleration: userConfigurationViewModel.usingScrollAcceleration ? 1000 : 10000
+                    clip: true
+                    section.property: "groupedKey"
+                    section.criteria: ViewSection.FullString
+                    section.labelPositioning: ViewSection.CurrentLabelAtStart
+                    section.delegate: Item {
+                        width: groupedListView.width
+                        height: 30
+
                         Rectangle {
-                            color: "transparent"
-                            width: scrollview.cellWidth
-                            height: scrollview.cellHeight
+                            anchors.fill: parent
+                            color: "red"
+                        }
 
-                            ReleaseItem {
-                                anchors.centerIn: parent
-
-                                onLeftClicked: {
-                                    if (releasesViewModel.isOpenedCard) return;
-
-                                    releasesViewModel.selectRelease(id);
-                                }
-                                onRightClicked: {
-                                    multupleMode.checked = !multupleMode.checked;
-                                }
-                                onAddToFavorite: {
-                                    releasesViewModel.addReleaseToFavorites(id);
-                                    releasesViewModel.clearSelectedReleases();
-                                }
-                                onRemoveFromFavorite: {
-                                    releasesViewModel.removeReleaseFromFavorites(id);
-                                    releasesViewModel.clearSelectedReleases();
-                                }
-                                onWatchRelease: {
-                                    page.watchSingleRelease(id, videos, -1, poster);
-                                }
-                            }
+                        Text {
+                            text: name
                         }
                     }
 
+                    ScrollBar.vertical: ScrollBar {
+                        active: true
+                        onPositionChanged: {
+                            if (position < -0.0008 && !releasesViewModel.synchronizationEnabled) {
+                                releasesViewModel.synchronizationEnabled = true;
+                                synchronizationService.synchronizeReleases(1);
+                            }
+                        }
+                    }
                     Component.onCompleted: {
                         scrollview.maximumFlickVelocity = scrollview.maximumFlickVelocity - 1050;
                     }

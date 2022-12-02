@@ -972,6 +972,7 @@ ApplicationWindow {
         synchronizationService: synchronizationService
         applicationSettings: applicationSettings
         localStorage: localStorage
+        items.itemWidth: 490
         notCloseReleaseCardAfterWatch: userConfigurationViewModel.notCloseReleaseCardAfterWatch
         imageBackgroundViewModel.containerWidth: releases.backgroundImageWidth
         imageBackgroundViewModel.containerHeight: releases.backgroundImageHeight

@@ -91,6 +91,7 @@ class ReleasesViewModel : public QObject
     Q_PROPERTY(bool synchronizationEnabled READ synchronizationEnabled WRITE setSynchronizationEnabled NOTIFY synchronizationEnabledChanged)
     Q_PROPERTY(QString newEntities READ newEntities WRITE setNewEntities NOTIFY newEntitiesChanged)
     Q_PROPERTY(bool notCloseReleaseCardAfterWatch READ notCloseReleaseCardAfterWatch WRITE setNotCloseReleaseCardAfterWatch NOTIFY notCloseReleaseCardAfterWatchChanged)
+    Q_PROPERTY(bool isGrouped READ isGrouped WRITE setIsGrouped NOTIFY isGroupedChanged)
 
 private:
     const QString releasesCacheFileName { "releases.cache" };
@@ -131,6 +132,7 @@ private:
     QScopedPointer<QList<std::tuple<int, int>>> m_sectionSorting { new QList<std::tuple<int, int>>() };
     bool m_notCloseReleaseCardAfterWatch { false };
     QString m_openedReleaseAnnounce { "" };
+    bool m_isGrouped { false };
 
 public:
     explicit ReleasesViewModel(QObject *parent = nullptr);
@@ -194,6 +196,9 @@ public:
 
     bool notCloseReleaseCardAfterWatch() const noexcept { return m_notCloseReleaseCardAfterWatch; }
     void setNotCloseReleaseCardAfterWatch(const bool notCloseReleaseCardAfterWatch) noexcept;
+
+    bool isGrouped() const noexcept { return m_isGrouped; }
+    void setIsGrouped(bool isGrouped) noexcept;
 
     bool isOpenedCard() const noexcept { return m_openedRelease != nullptr; }
     int openedReleaseId() const noexcept { return m_openedRelease != nullptr ? m_openedRelease->id() : 0; }
@@ -382,6 +387,7 @@ signals:
     void userActivityChanged();
     void hasCinemahallNotSeenVideosChanged();
     void openedReleaseAnnounceChanged();
+    void isGroupedChanged();
 
 };
 
