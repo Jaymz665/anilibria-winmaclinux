@@ -1605,7 +1605,15 @@ Page {
                         width: parent.width
                         cellWidth: parent.width / Math.floor(parent.width / 490)
                         cellHeight: 290
-                        delegate: releaseDelegate
+                        delegate: Rectangle {
+                            color: "transparent"
+                            width: notGroupedGridView.cellWidth
+                            height: notGroupedGridView.cellHeight
+
+                            ReleaseItem {
+                                anchors.centerIn: parent
+                            }
+                        }
                         model: releasesViewModel.items
                         flickDeceleration: userConfigurationViewModel.usingScrollAcceleration ? 1000 : 10000
                         clip: true
@@ -1615,39 +1623,6 @@ Page {
                                 if (position < -0.0008 && !releasesViewModel.synchronizationEnabled) {
                                     releasesViewModel.synchronizationEnabled = true;
                                     synchronizationService.synchronizeReleases(1);
-                                }
-                            }
-                        }
-
-                        Component {
-                            id: releaseDelegate
-                            Rectangle {
-                                color: "transparent"
-                                width: notGroupedGridView.cellWidth
-                                height: notGroupedGridView.cellHeight
-
-                                ReleaseItem {
-                                    anchors.centerIn: parent
-
-                                    onLeftClicked: {
-                                        if (releasesViewModel.isOpenedCard) return;
-
-                                        releasesViewModel.selectRelease(id);
-                                    }
-                                    onRightClicked: {
-                                        multupleMode.checked = !multupleMode.checked;
-                                    }
-                                    onAddToFavorite: {
-                                        releasesViewModel.addReleaseToFavorites(id);
-                                        releasesViewModel.clearSelectedReleases();
-                                    }
-                                    onRemoveFromFavorite: {
-                                        releasesViewModel.removeReleaseFromFavorites(id);
-                                        releasesViewModel.clearSelectedReleases();
-                                    }
-                                    onWatchRelease: {
-                                        page.watchSingleRelease(id, videos, -1, poster);
-                                    }
                                 }
                             }
                         }
@@ -1668,16 +1643,20 @@ Page {
                         height: parent.height
                         width: parent.width
                         delegate: Item {
-                            width: 490
+                            width: groupedListView.width
                             height: 290
 
-                            Rectangle {
-                                anchors.fill: parent
-                                color: "green"
-                            }
+                            Repeater {
+                                model: groupedReleases
+                                Rectangle {
+                                    color: "transparent"
+                                    width: releasesViewModel.items.columnWidth
+                                    height: parent.height
 
-                            Text {
-                                text: "releases" + groupedReleases
+                                    ReleaseItem {
+                                        anchors.centerIn: parent
+                                    }
+                                }
                             }
                         }
                         model: releasesViewModel.items

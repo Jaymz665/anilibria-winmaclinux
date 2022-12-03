@@ -42,8 +42,6 @@ Rectangle {
 
     property var releaseModel: ({})
 
-    signal leftClicked()
-    signal rightClicked()
     signal addToFavorite(int id)
     signal removeFromFavorite(int id)
     signal watchRelease(int id, string videos, string poster)
@@ -63,10 +61,11 @@ Rectangle {
         hoverEnabled: true
         onClicked: {
             if(mouse.button & Qt.RightButton) {
-                releaseItem.rightClicked();
-                return;
+                multupleMode.checked = !multupleMode.checked;
             } else {
-                releaseItem.leftClicked();
+                if (releasesViewModel.isOpenedCard) return;
+
+                releasesViewModel.selectRelease(id);
             }
         }
         onEntered: {
@@ -258,7 +257,8 @@ Rectangle {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 onPressed: {
-                                    releaseItem.watchRelease(id, videos, poster);
+                                    //releaseItem.watchRelease(id, videos, poster);
+                                    page.watchSingleRelease(id, videos, -1, poster);
                                 }
                                 onEntered: {
                                     onlineRectangle.color = applicationThemeViewModel.panelBackgroundShadow;
@@ -434,9 +434,13 @@ Rectangle {
                         }
                         onPressed: {
                             if (inFavorites) {
-                                releaseItem.removeFromFavorite(id);
+                                //releaseItem.removeFromFavorite(id);
+                                releasesViewModel.removeReleaseFromFavorites(id);
+                                releasesViewModel.clearSelectedReleases();
                             } else {
-                                releaseItem.addToFavorite(id);
+                                //releaseItem.addToFavorite(id);
+                                releasesViewModel.addReleaseToFavorites(id);
+                                releasesViewModel.clearSelectedReleases();
                             }
                         }
                     }
