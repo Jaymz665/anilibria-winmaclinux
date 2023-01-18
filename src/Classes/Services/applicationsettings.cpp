@@ -18,10 +18,17 @@
 
 #include "applicationsettings.h"
 #include <QCoreApplication>
+#include <QStandardPaths>
+
+#include <QDebug>
 
 ApplicationSettings::ApplicationSettings(QObject *parent) : QObject(parent)
 {
+#ifdef Q_OS_WIN
+    m_Settings = new QSettings(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/settings.ini", QSettings::IniFormat);
+#else
     m_Settings = new QSettings;
+#endif
 }
 
 QString ApplicationSettings::userToken()
@@ -207,4 +214,11 @@ void ApplicationSettings::setNormalHeight(int normalHeight) noexcept
     m_Settings->setValue("normalheight", normalHeight);
 
     emit normalHeightChanged();
+}
+
+void ApplicationSettings::saveChanges() noexcept
+{
+#ifdef Q_OS_WIN
+    m_Settings->sync();
+#endif
 }

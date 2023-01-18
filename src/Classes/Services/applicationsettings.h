@@ -93,6 +93,8 @@ public:
     int normalHeight() noexcept;
     void setNormalHeight(int normalHeight) noexcept;
 
+    Q_INVOKABLE void saveChanges() noexcept;
+
 
 signals:
     void userTokenChanged(QString& token);

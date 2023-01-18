@@ -119,6 +119,7 @@ ApplicationWindow {
             applicationSettings.normalWidth = window.normalWindowSizeWidth;
             applicationSettings.normalHeight = window.normalWindowSizeHeight;
         }
+        applicationSettings.saveChanges();
     }
 
     header: Rectangle {
