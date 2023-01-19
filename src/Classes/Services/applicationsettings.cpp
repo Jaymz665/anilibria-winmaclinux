@@ -20,8 +20,6 @@
 #include <QCoreApplication>
 #include <QStandardPaths>
 
-#include <QDebug>
-
 ApplicationSettings::ApplicationSettings(QObject *parent) : QObject(parent)
 {
 #ifdef Q_OS_WIN
